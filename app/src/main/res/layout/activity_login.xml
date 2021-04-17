@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LoginActivity">
+
+    <TextView
+        android:id="@+id/text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="3dp"
+        android:text="@string/welcome_login"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toTopOf="@id/editName"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <EditText
+        android:id="@+id/editName"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="3dp"
+        android:autofillHints="username"
+        android:hint="@string/username"
+        android:inputType="number"
+        app:layout_constraintBottom_toTopOf="@id/editPassword"
+        app:layout_constraintHeight_percent="0.07"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text1"
+        app:layout_constraintWidth_percent="0.5" />
+
+    <EditText
+        android:id="@+id/editPassword"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="3dp"
+        android:autofillHints="password"
+        android:hint="@string/password"
+        android:inputType="textPassword"
+        app:layout_constraintBottom_toTopOf="@id/autoLogin"
+        app:layout_constraintHeight_percent="0.07"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editName"
+        app:layout_constraintWidth_percent="0.5" />
+
+    <CheckBox
+        android:id="@+id/autoLogin"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="9dp"
+        android:text="@string/auto_login"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@id/buttonLogin"
+        app:layout_constraintHeight_percent="0.04"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintLeft_toLeftOf="@id/editPassword"
+        app:layout_constraintRight_toLeftOf="@id/rememberPassword"
+        app:layout_constraintTop_toBottomOf="@id/editPassword"
+        app:layout_constraintWidth_percent="0.22" />
+
+    <CheckBox
+        android:id="@+id/rememberPassword"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="@string/remember_password"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@id/autoLogin"
+        app:layout_constraintHeight_percent="0.04"
+        app:layout_constraintLeft_toRightOf="@id/autoLogin"
+        app:layout_constraintRight_toRightOf="@id/editPassword"
+        app:layout_constraintTop_toTopOf="@id/autoLogin"
+        app:layout_constraintWidth_percent="0.22" />
+
+    <Button
+        android:id="@+id/buttonLogin"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="3dp"
+        android:text="@string/login"
+        app:layout_constraintBottom_toTopOf="@id/buttonQuit"
+        app:layout_constraintHeight_percent="0.07"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/autoLogin"
+        app:layout_constraintWidth_percent="0.5" />
+
+    <Button
+        android:id="@+id/buttonQuit"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="@string/quit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHeight_percent="0.07"
+        app:layout_constraintLeft_toRightOf="@+id/buttonRegister"
+        app:layout_constraintRight_toRightOf="@id/buttonLogin"
+        app:layout_constraintTop_toBottomOf="@id/buttonLogin"
+        app:layout_constraintWidth_percent="0.2" />
+
+    <Button
+        android:id="@+id/buttonRegister"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="@string/register"
+        app:layout_constraintBottom_toBottomOf="@id/buttonQuit"
+        app:layout_constraintHeight_percent="0.07"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintLeft_toLeftOf="@id/buttonLogin"
+        app:layout_constraintRight_toLeftOf="@+id/buttonQuit"
+        app:layout_constraintTop_toTopOf="@+id/buttonQuit"
+        app:layout_constraintWidth_percent="0.2" />
+</androidx.constraintlayout.widget.ConstraintLayout>
