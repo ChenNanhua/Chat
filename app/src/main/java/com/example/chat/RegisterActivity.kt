@@ -2,11 +2,14 @@ package com.example.chat
 
 import android.app.Activity
 import android.content.Intent
+import android.database.sqlite.SQLiteConstraintException
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_register.*
+import java.lang.Exception
 
 class RegisterActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,16 +33,26 @@ class RegisterActivity : AppCompatActivity(), View.OnClickListener {
                 } else {
                     val passwordMd5 = Hash.md5(password)
                     val db = MyDBHelper(this).writableDatabase
-                    db.execSQL(
-                        "insert into User(username,passwordMd5,remember) values (?,?,?)",
-                        arrayOf(username, passwordMd5, 0)
-                    )
-                    //返回数据给MainActivity
-                    val intent = Intent()
-                    intent.putExtra("username", username)
-                    intent.putExtra("password", password)
-                    setResult(Activity.RESULT_OK, intent)
-                    finish()
+                    try {
+                        db.execSQL(
+                            "insert into User(username,passwordMd5,remember) values (?,?,?)",
+                            arrayOf(username, passwordMd5, 0)
+                        )
+                        //返回数据给MainActivity
+                        val intent = Intent()
+                        intent.putExtra("username", username)
+                        intent.putExtra("password", password)
+                        setResult(Activity.RESULT_OK, intent)
+                        finish()
+                    } catch (e: SQLiteConstraintException) {
+                        Log.w("注册时用户名重复", e.toString())
+                        Toast.makeText(this, "用户名已被注册", Toast.LENGTH_SHORT).show()
+                        editName.setText("")
+                        editPassword.setText("")
+                        editPasswordRepeat.setText("")
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
             R.id.buttonQuit -> {     //退出

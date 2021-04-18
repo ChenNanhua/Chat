@@ -4,10 +4,10 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class MyDBHelper(private val context: Context, name: String="chat.db", version: Int=1) :
+class MyDBHelper(context: Context, name: String="chat.db", version: Int=1) :
     SQLiteOpenHelper(context, name, null, version) {
      private val createUser = "create table User("+
-             "username text,"+
+             "username text unique,"+
              "passwordMd5 text,"+
              "remember integer)"
 
