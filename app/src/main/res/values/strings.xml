@@ -20,4 +20,7 @@
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
     <string name="avatar">头像</string>
+    <string name="send">send</string>
+    <string name="get">get</string>
+    <string name="search_local">searchIP</string>
 </resources>

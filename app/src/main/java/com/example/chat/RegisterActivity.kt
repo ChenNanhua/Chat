@@ -12,6 +12,7 @@ import kotlinx.android.synthetic.main.activity_register.*
 import java.lang.Exception
 
 class RegisterActivity : AppCompatActivity(), View.OnClickListener {
+    private val tag = "RegisterActivity"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
@@ -45,7 +46,7 @@ class RegisterActivity : AppCompatActivity(), View.OnClickListener {
                         setResult(Activity.RESULT_OK, intent)
                         finish()
                     } catch (e: SQLiteConstraintException) {
-                        Log.w("注册时用户名重复", e.toString())
+                        Log.w(tag,"注册时用户名重复${e.toString()}")
                         Toast.makeText(this, "用户名已被注册", Toast.LENGTH_SHORT).show()
                         editName.setText("")
                         editPassword.setText("")
