@@ -5,9 +5,9 @@ import android.content.Intent
 import android.database.sqlite.SQLiteConstraintException
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
+import com.example.chat.chatUtil.*
 import kotlinx.android.synthetic.main.activity_register.*
 import java.lang.Exception
 
@@ -32,7 +32,7 @@ class RegisterActivity : AppCompatActivity(), View.OnClickListener {
                     editPassword.setText("")
                     editPasswordRepeat.setText("")
                 } else {
-                    val passwordMd5 = Hash.md5(password)
+                    val passwordMd5 = HashUtil.md5(password)
                     val db = MyDBHelper(this).writableDatabase
                     try {
                         db.execSQL(
@@ -46,7 +46,7 @@ class RegisterActivity : AppCompatActivity(), View.OnClickListener {
                         setResult(Activity.RESULT_OK, intent)
                         finish()
                     } catch (e: SQLiteConstraintException) {
-                        Log.w(tag,"注册时用户名重复${e.toString()}")
+                        LogUtil.w(tag,"注册时用户名重复${e.toString()}")
                         Toast.makeText(this, "用户名已被注册", Toast.LENGTH_SHORT).show()
                         editName.setText("")
                         editPassword.setText("")

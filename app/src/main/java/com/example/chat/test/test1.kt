@@ -1,16 +1,41 @@
-package com.example.chat
+package com.example.chat.test
 
+import android.R.attr.port
 import kotlinx.coroutines.*
+import java.io.DataOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.Collections.synchronizedSet
-import kotlin.concurrent.thread
+
 
 fun main(){
-    val test = test()
-    test.fun1("10")
-    Thread.sleep(10)
-    println("total:")
-    test.show()
-    println("end")
+    val port = 8080
+    var length = 0
+    var socket: Socket? = null
+    var send: DataOutputStream? = null
+    var get: FileInputStream? = null
+    try {
+        try {
+            socket = Socket()
+            socket.connect(InetSocketAddress("127.0.0.1", port), 30 * 1000)
+            send = DataOutputStream(socket.getOutputStream())
+            get = FileInputStream(File("D:\\temp\\test-out\\grass.png"))
+            val sendBytes = ByteArray(1024 * 4)
+            while (get.read(sendBytes, 0, sendBytes.size).also { length = it } > 0) {
+                send.write(sendBytes, 0, length)
+                send.flush()
+            }
+        } finally {
+            send?.close()
+            get?.close()
+            socket?.close()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+
 
 }
 
@@ -32,7 +57,7 @@ class test(){
         show()
     }
 
-    fun fun1(add:String){
+    fun fun1(add: String){
         scope.launch(Dispatchers.IO){
             for (i in 2..3)
             launch {

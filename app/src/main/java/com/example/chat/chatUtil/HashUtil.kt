@@ -1,8 +1,8 @@
-package com.example.chat
+package com.example.chat.chatUtil
 
 import java.security.MessageDigest
 
-object Hash {
+object HashUtil {
 
     private val HEX_CHARS = "0123456789ABCDEF".toCharArray()
 

@@ -2,13 +2,13 @@ package com.example.chat
 
 
 import android.net.wifi.WifiManager
+import android.os.Handler
+import android.os.Message
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat.getSystemService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import com.example.chat.chatUtil.*
+import kotlinx.coroutines.*
 import java.io.*
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -22,13 +22,16 @@ class LocalNet {
     private val port = 8080
     val job = Job()
     private val scope = CoroutineScope(job)
-    companion object Instance{
+
+    companion object Instance {
         //保存所有打开port的用户IP
-        @Volatile var availablePort: MutableSet<String> = synchronizedSet(mutableSetOf<String>())
+        @Volatile
+        var availableIp: MutableSet<String> = synchronizedSet(mutableSetOf<String>())
     }
+
     //创建服务器，接收传来的数据
     fun getMessage() {  //接收发来的消息
-        thread {
+        thread{
             val serverSocket = ServerSocket(port)
             lateinit var socket:Socket
             Log.d(tag, "启动服务器")
@@ -38,7 +41,7 @@ class LocalNet {
                         socket = serverSocket.accept()
                         val get = BufferedReader(InputStreamReader(socket.getInputStream()))
                         val send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                        println("-----------------准备读取输入")
+                        println("接收到客户端的连接，准备读取输入")
                         while (true) {
                             val str: String? = get.readLine()
                             if (str == "END") break
@@ -63,32 +66,39 @@ class LocalNet {
             }
         }
     }
+
     //在局域网中发送消息
-    fun sendMessage() {
+    fun sendMessage(message: String, ip: String = "0.0.0.0") {
         thread {
-            println("sendMessage中遍历端口:${availablePort}")
-            val ip = availablePort.elementAt(0)
+            var socket: Socket? = null
+            var send: PrintWriter? = null
+            var get: BufferedReader? = null
             try {
-                val socket = Socket(ip, 8080)
-                val get = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                send.println("send消息:test")
+                socket = Socket(ip, port)
+                get = BufferedReader(InputStreamReader(socket.getInputStream()))
+                send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+                send.println(message)
                 send.println("END")
                 val str: String = get.readLine()
-                println("客户端收到消息: $str")
+                LogUtil.d(tag, "客户端收到消息: $str")
             } catch (e: IOException) {
                 e.printStackTrace()
+            } finally {
+                send?.close()
+                get?.close()
+                socket?.close()
             }
         }
     }
+
     //不停的在局域网中发起连接请求，搜索其他用户
-    fun searchLocal() {
-        thread{
-            val address = getIp()
-            Log.d(tag, "客户端保活,IP: $address")
-            val addressList: MutableList<String> = address.split(".").toMutableList()
-            val host: Int = addressList[addressList.size - 1].toInt()
-            val start = System.currentTimeMillis()
+    fun searchLocal(handler: Handler) {
+        val address = getIp()
+        LogUtil.d(tag, "客户端正在搜寻,客户端IP: $address")
+        val addressList: MutableList<String> = address.split(".").toMutableList()
+        //val host: Int = addressList[addressList.size - 1].toInt() //排除host时所用
+        val start = System.currentTimeMillis()
+        thread {
             var isBreak = true
             //循环发送连接请求
             while (isBreak) {
@@ -96,28 +106,44 @@ class LocalNet {
                     //遍历局域网所有主机
                     for (i in 1..255) {
                         launch {
-                            //TODO 排除本机
+                            //TODO 排除本机 现阶段无法排除，只能自己跟自己聊天玩玩
                             if (i > 0) {
+                                //通过遍历IP地址最后一段，遍历局域网所有主机
                                 addressList[addressList.size - 1] = i.toString()
                                 val tempAddress = addressList.joinToString(".")
-                                println(tempAddress)
+                                //LogUtil.d(tag, tempAddress)
+                                var socket: Socket? = null
+                                var send: PrintWriter? = null
                                 try {
-                                    val socket = Socket()
-                                    socket.connect(InetSocketAddress(tempAddress, 8080), 100)
-                                    val send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                                    send.println("END")
-                                    addAddress(address)
+                                    //尝试与主机建立联系
+                                    socket = Socket()
+                                    send = withContext(Dispatchers.IO) {
+                                        socket.connect(InetSocketAddress(tempAddress, port), 100)
+                                        PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+                                    }
+                                    send.println("INFO")    //发送获取主机信息信号
+                                    send.println("END")     //发送断开连接信号
+                                    addAddress(address)     //将建立过连接的主机添加到可访问主机中
                                 } catch (e: Exception) {
-                                    //Log.v(tag, e.message.toString()
+                                    //LogUtil.v(tag, e.message.toString()
+                                } finally {
+                                    withContext(Dispatchers.IO) {
+                                        send?.close()
+                                        socket?.close()
+                                    }
                                 }
                             }
                         }
                     }
                 }
                 Thread.sleep(1000)
-                Log.d(tag, "在本地局域网找到的IP: ${availablePort.toString()}")
-                Thread.sleep(19000)
+                LogUtil.d(tag, "在本地局域网找到的IP: $availableIp")
+                //更新UI
+                val msg = Message()
+                msg.what = ContactActivity.updateRecyclerView
+                handler.sendMessage(msg)
                 //发送超过一定时间后退出
+                Thread.sleep(19000)
                 if (System.currentTimeMillis() - start > 20000) {
                     isBreak = false
                     job.cancel()
@@ -125,18 +151,14 @@ class LocalNet {
             }
         }
     }
+
     //为多线程提供的锁
     @Synchronized
     private fun addAddress(address: String) {
-        availablePort.add(address)
-    }
-    //打印availablePort中的数据
-    private fun show(string: String = "") {
-        println(string)
-        for (i in availablePort)
-            println("在i的元素：${i}")
+        availableIp.add(address)
     }
 
+    //获取本机的IP地址
     private fun getIp(): String {
         val wm = getSystemService(MyApplication.context, WifiManager::class.java)
         //检查Wifi状态
@@ -145,12 +167,11 @@ class LocalNet {
             return "0.0.0.0"
         }
         val wi = wm.connectionInfo
-        //获取32位整型IP地址
-        val ipAdd = wi.ipAddress
         //把整型地址转换成“*.*.*.*”地址
-        return intToIp(ipAdd)
+        return intToIp(wi.ipAddress)
     }
 
+    //32位整型IP地址转换成“*.*.*.*”地址
     private fun intToIp(i: Int): String {
         return (i and 0xFF).toString() + "." +
                 (i shr 8 and 0xFF) + "." +

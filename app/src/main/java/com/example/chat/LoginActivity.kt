@@ -3,23 +3,23 @@ package com.example.chat
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.database.sqlite.SQLiteDatabase
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import com.example.chat.chatUtil.DBUtil.db
+import com.example.chat.chatUtil.HashUtil
 import kotlinx.android.synthetic.main.activity_login.*
 
 class LoginActivity : AppCompatActivity(), View.OnClickListener {
-    private lateinit var db: SQLiteDatabase
     override fun onCreate(savedInstanceState: Bundle?) {
-        db = MyDBHelper(this).writableDatabase
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
         //给按钮设置监听事件
         buttonLogin.setOnClickListener(this)
         buttonRegister.setOnClickListener(this)
         buttonQuit.setOnClickListener(this)
+        //判断是否自动登录
         val autoLoginName = getSharedPreferences("data", Context.MODE_PRIVATE).getString("autoLoginName", "")
         if (autoLoginName != "") {      //存在要自动登录的账号，如果有记住密码则可以自动登录
             editName.setText(autoLoginName)
@@ -30,8 +30,9 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                 if (isRemember > 0) {
                     autoLogin.isChecked = true
                     rememberPassword.isChecked = true
-                    startActivity(Intent(this,ContactActivity::class.java))
-                    Toast.makeText(this, "登录成功...", Toast.LENGTH_SHORT).show()
+                    getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("username", autoLoginName).apply()
+                    startActivity(Intent(this, ContactActivity::class.java))
+                    Toast.makeText(this, "自动登录成功...", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             }
@@ -43,7 +44,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         when (v?.id) {
             R.id.buttonLogin -> {    //登录逻辑
                 val username = editName.text.toString()     //与数据库中保存的账号信息比对
-                val passwordMd5 = Hash.md5(editPassword.text.toString())
+                val passwordMd5 = HashUtil.md5(editPassword.text.toString())
                 val cursor = db.rawQuery(
                     "select * from User where username = ? and passwordMd5 = ?", arrayOf(username, passwordMd5)
                 )
@@ -62,7 +63,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                             .apply()
                     else
                         getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("autoLoginName", "").apply()
-                    startActivity(Intent(this,ContactActivity::class.java))
+                    getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("username", username).apply()
+                    startActivity(Intent(this, ContactActivity::class.java))
                     finish()
                 }
                 cursor.close()
@@ -75,7 +77,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
     }
-
+    //获取RegisterActivity返回的用户名和密码
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {

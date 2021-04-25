@@ -1,31 +1,41 @@
 package com.example.chat
 
-import java.net.InetAddress
+import java.io.DataInputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.net.InetSocketAddress
+import java.net.ServerSocket
 import java.net.Socket
-import kotlinx.coroutines.*
 
 fun main() {
-
-
-    val address: String = InetAddress.getLocalHost().toString().split("/")[1];  //电脑名/IP
-    val addressList: MutableList<String> = address.split(".").toMutableList()
-    val availablePort: MutableList<String> = mutableListOf()
-    val job= Job()
-    val scope = CoroutineScope(job)
-
-    val start = System.currentTimeMillis()
-    scope.launch(Dispatchers.IO) {
-        for (i in 1..255) {
-            launch {
-                connect(i, addressList, availablePort)
+    val port = 8080
+    println("开始监听")
+    var inputByte: ByteArray? = null
+    var length = 0
+    var dis: DataInputStream? = null
+    var fos: FileOutputStream? = null
+    try {
+        val server = ServerSocket(port)
+        val socket = server.accept()
+        try {
+            dis = DataInputStream(socket.getInputStream())
+            fos = FileOutputStream(File("D:\\temp\\test-in\\grass.png"))
+            inputByte = ByteArray(1024 * 4)
+            println("开始接收数据...")
+            while (dis.read(inputByte, 0, inputByte.size).also({ length = it }) > 0) {
+                fos.write(inputByte, 0, length)
+                fos.flush()
             }
+            println("完成接收")
+        } finally {
+            if (fos != null) fos.close()
+            if (dis != null) dis.close()
+            socket?.close()
         }
+    } catch (e: java.lang.Exception) {
+        e.printStackTrace()
     }
-    Thread.sleep(1100)
-    job.cancel()
-    println(availablePort)
-    println("运行时间：${System.currentTimeMillis() - start}")
+
 }
 
 fun connect(i: Int, addressList: MutableList<String>, availablePort: MutableList<String>) {
