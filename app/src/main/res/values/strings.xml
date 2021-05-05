@@ -23,4 +23,5 @@
     <string name="send">send</string>
     <string name="get">get</string>
     <string name="search_local">searchIP</string>
+    <string name="image">图片</string>
 </resources>

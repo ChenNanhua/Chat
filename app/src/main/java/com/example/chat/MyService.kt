@@ -16,7 +16,7 @@ class MyService : Service() {
         super.onCreate()
         LogUtil.d(tag,"onCreate")
         localNet = LocalNet()
-        localNet.getMessage()
+        localNet.startServer()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -28,6 +28,7 @@ class MyService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         LogUtil.d(tag,"onDestroy")
+        LogUtil.d(tag,"服务器被关闭---------")
         localNet.job.cancel()
     }
 }

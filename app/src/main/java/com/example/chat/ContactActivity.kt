@@ -122,7 +122,8 @@ class ContactActivity : AppCompatActivity() {
     //更新联系人列表
     private fun initContact(availableIp: MutableSet<String>) {
         Toast.makeText(this, "更新联系人列表", Toast.LENGTH_SHORT).show()
-        LogUtil.d(tag, "IP列表长度${availableIp.size}")
+        LogUtil.d(tag, "联系人列表长度${availableIp.size}")
+        contactList.clear()     //清空以往保存的联系人信息
         with(contactList) {
             for (Ip in availableIp)
                 add(Contact(Ip, R.drawable.none))

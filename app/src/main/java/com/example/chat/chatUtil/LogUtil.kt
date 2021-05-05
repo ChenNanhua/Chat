@@ -14,7 +14,7 @@ object LogUtil {
     }
 
     fun d(tag: String, msg: String) {
-        if (LEVEL <= DEBUG) Log.d(tag, msg)
+        if (LEVEL <= DEBUG) Log.w(tag, msg)
     }
 
     fun i(tag: String, msg: String) {
