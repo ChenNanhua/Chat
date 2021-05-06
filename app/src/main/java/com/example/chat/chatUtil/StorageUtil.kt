@@ -53,7 +53,6 @@ object StorageUtil {
                 "image/jpeg" -> put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
                 "image/png" -> put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
             }
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             put(MediaStore.MediaColumns.DATE_ADDED, imageTime / 1000)
             put(MediaStore.MediaColumns.DATE_MODIFIED, imageTime / 1000)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -61,8 +60,8 @@ object StorageUtil {
             }
         }
         val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-        LogUtil.d(tag, "URI: $uri")
-        if (uri != null) {
+        LogUtil.d(tag, "保存到相册的URI: $uri")
+        uri?.let {
             resolver.openOutputStream(uri).use {
                 when (type) {
                     "image/jpeg" -> bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)

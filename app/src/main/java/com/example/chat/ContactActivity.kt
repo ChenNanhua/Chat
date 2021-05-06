@@ -4,12 +4,9 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.*
-import android.provider.MediaStore
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -20,7 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
 import kotlinx.android.synthetic.main.activity_contact.*
 import java.io.*
-import java.sql.Blob
 
 
 class ContactActivity : AppCompatActivity() {
@@ -35,7 +31,7 @@ class ContactActivity : AppCompatActivity() {
     private val handler = object : Handler(Looper.myLooper()!!) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                updateRecyclerView -> initContact(LocalNet.availableIp)
+                updateRecyclerView -> initContact(LocalNet.availableContact)
             }
         }
     }
@@ -78,21 +74,11 @@ class ContactActivity : AppCompatActivity() {
                 intent.type = "image/*"
                 startActivityForResult(intent, 2)
             }
-            R.id.sendMessage -> localNet.sendMessage(LocalNet.availableIp.elementAt(0))
+            R.id.sendMessage -> localNet.sendLocalMessage(LocalNet.availableContact.elementAt(0).IP)
             R.id.searchLocal -> localNet.searchLocal(handler)
             R.id.startMyService -> {    //各种调试
-                val uri = StorageUtil.getUri("069fdcff")
-                //测试发送原始数据
-                val i = DataInputStream(FileInputStream(StorageUtil.getFileDescriptor(uri)))
-                val byte = ByteArray(1024 * 4)
-                var arr = byteArrayOf()
-                var len = 0
-                len = i.read(byte)
-                while (len > 0) {
-                    arr += byte
-                    len = i.read(byte)
-                }
-                val bitmap: Bitmap = BitmapFactory.decodeByteArray(arr, 0, arr.size)
+                val uri = StorageUtil.getUri("641")
+                val bitmap = StorageUtil.getBitmapFromUri(uri)
                 contactImageView.setImageBitmap(bitmap)
             }
         }
@@ -109,9 +95,9 @@ class ContactActivity : AppCompatActivity() {
                     data.data?.let {
                         LogUtil.d(tag, it.toString())
                         val bitmap = StorageUtil.getBitmapFromUri(it)
+                        contactImageView.setImageBitmap(bitmap)
                         val name = StorageUtil.getName()
                         DBUtil.setAvatar(name)
-                        contactImageView.setImageBitmap(bitmap)
                         StorageUtil.saveBitmapToPicture(bitmap, name) //保存图片到本地
                     }
                 }
@@ -120,13 +106,16 @@ class ContactActivity : AppCompatActivity() {
     }
 
     //更新联系人列表
-    private fun initContact(availableIp: MutableSet<String>) {
+    private fun initContact(availableContact: MutableSet<Contact>) {
         Toast.makeText(this, "更新联系人列表", Toast.LENGTH_SHORT).show()
-        LogUtil.d(tag, "联系人列表长度${availableIp.size}")
+        LogUtil.d(tag, "联系人列表长度${availableContact.size}")
         contactList.clear()     //清空以往保存的联系人信息
         with(contactList) {
-            for (Ip in availableIp)
-                add(Contact(Ip, R.drawable.none))
+            for (contact in availableContact)
+                if(contact.imageName=="")
+                    add(Contact(contact.name,contact.IP, "",R.drawable.none))
+                else
+                    add(Contact(contact.name,contact.IP, contact.imageName,R.drawable.none))
         }
         val layoutManager = LinearLayoutManager(this)
         val adapter = ContactAdapter(contactList)

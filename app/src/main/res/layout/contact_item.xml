@@ -18,12 +18,25 @@
     <TextView
         android:id="@+id/contactName"
         android:layout_width="0dp"
-        android:layout_height="48dp"
+        android:layout_height="0dp"
         android:layout_marginStart="6dp"
         android:textSize="16sp"
+        app:layout_constraintVertical_chainStyle="spread_inside"
         app:layout_constraintTop_toTopOf="@id/contactImage"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/contactImage"/>
+        app:layout_constraintLeft_toRightOf="@id/contactImage"
+        app:layout_constraintBottom_toTopOf="@id/contactIP"/>
+
+    <TextView
+        android:id="@+id/contactIP"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="6dp"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/contactName"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/contactImage"
+        app:layout_constraintBottom_toBottomOf="@id/contactImage"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

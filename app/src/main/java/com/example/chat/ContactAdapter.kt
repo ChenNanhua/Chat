@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.chat.chatUtil.StorageUtil
 import kotlinx.android.synthetic.main.contact_item.view.*
 
 class ContactAdapter(private val contactList: List<Contact>) :
@@ -14,6 +15,7 @@ class ContactAdapter(private val contactList: List<Contact>) :
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val contactImage: ImageView = view.contactImage
         val contactName: TextView = view.contactName
+        val contactIP: TextView = view.contactIP
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -23,8 +25,14 @@ class ContactAdapter(private val contactList: List<Contact>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contactList[position]
-        holder.contactImage.setImageResource(contact.imageId)
         holder.contactName.text = contact.name
+        holder.contactIP.text = contact.IP
+        if (contact.imageName == "")
+            holder.contactImage.setImageResource(contact.imageId)
+        else {
+            val uri = StorageUtil.getUri(contact.imageName)
+            holder.contactImage.setImageBitmap(StorageUtil.getBitmapFromUri(uri))
+        }
     }
 
     override fun getItemCount(): Int = contactList.size
