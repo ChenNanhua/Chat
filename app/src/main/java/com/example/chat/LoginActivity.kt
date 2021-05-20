@@ -31,7 +31,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                     autoLogin.isChecked = true
                     rememberPassword.isChecked = true
                     getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("username", autoLoginName).apply()
-                    startActivity(Intent(this, ContactActivity::class.java))
+                    startActivity(Intent(this, ContactListActivity::class.java))
                     Toast.makeText(this, "自动登录成功...", Toast.LENGTH_SHORT).show()
                     finish()
                 }
@@ -64,7 +64,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                     else
                         getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("autoLoginName", "").apply()
                     getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("username", username).apply()
-                    startActivity(Intent(this, ContactActivity::class.java))
+                    startActivity(Intent(this, ContactListActivity::class.java))
                     finish()
                 }
                 cursor.close()

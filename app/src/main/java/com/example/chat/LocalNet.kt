@@ -9,13 +9,11 @@ import android.os.Message
 import android.widget.Toast
 import androidx.core.content.ContextCompat.getSystemService
 import com.example.chat.chatUtil.*
-import kotlinx.android.synthetic.main.activity_contact.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
-import java.nio.ByteBuffer
 import java.util.Collections.*
 import kotlin.concurrent.thread
 
@@ -154,7 +152,7 @@ class LocalNet {
                 LogUtil.d(tag, "在本地局域网找到的IP: $availableContact")
                 //更新UI
                 val msg = Message()
-                msg.what = ContactActivity.updateRecyclerView
+                msg.what = ContactListActivity.updateRecyclerView
                 handler.sendMessage(msg)
                 //发送超过一定时间后退出
                 Thread.sleep(1000)

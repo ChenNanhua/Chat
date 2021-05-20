@@ -1,126 +1,60 @@
 package com.example.chat
 
-import android.Manifest
-import android.app.Activity
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.os.*
-import android.view.Menu
-import android.view.MenuItem
+import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.chat.chatUtil.*
+import com.example.chat.chatUtil.LogUtil
 import kotlinx.android.synthetic.main.activity_contact.*
-import java.io.*
 
-
-class ContactActivity : AppCompatActivity() {
-    private val contactList = ArrayList<Contact>()
+class ContactActivity:AppCompatActivity(),View.OnClickListener{
     private val tag = "ContactActivity"
-    private val localNet = LocalNet()
-
-    companion object {
-        const val updateRecyclerView = 1
-    }
-
-    private val handler = object : Handler(Looper.myLooper()!!) {
-        override fun handleMessage(msg: Message) {
-            when (msg.what) {
-                updateRecyclerView -> initContact(LocalNet.availableContact)
-            }
-        }
-    }
+    private val msgList = ArrayList<Msg>()
+    private var adapter: MsgAdapter? = null
+    private lateinit var contact:Contact
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact)
-        //搜索局域网用户
-        startService(Intent(this, MyService::class.java))
-        localNet.searchLocal(handler)
-        ActivityCompat.requestPermissions(
-            this, arrayOf(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ), 1
-        )
+        //获取聊天对象contact
+        contact = intent.getSerializableExtra("contact") as Contact
+        LogUtil.d(tag,contact.toString())
+        initMsg(contact)
+        val layoutManager = LinearLayoutManager(this)
+        adapter = MsgAdapter(msgList)
+        contactRecycleView.adapter = adapter
+        contactRecycleView.layoutManager = layoutManager
+        sendMessage.setOnClickListener(this)
     }
-
-    //动态申请权限的回调方法
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
-        } else {    //Permission Denied
-            Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
-    //创建menu菜单
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.contact_menu, menu)
-        return true
-    }
-
-    //menu菜单添加响应
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.getMessage -> {    //打开相册,选择要作为头像的图片
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                intent.type = "image/*"
-                startActivityForResult(intent, 2)
-            }
-            R.id.sendMessage -> localNet.sendLocalMessage(LocalNet.availableContact.elementAt(0).IP)
-            R.id.searchLocal -> localNet.searchLocal(handler)
-            R.id.startMyService -> {    //各种调试
-                val uri = StorageUtil.getUri("641")
-                val bitmap = StorageUtil.getBitmapFromUri(uri)
-                contactImageView.setImageBitmap(bitmap)
-            }
-        }
-        return true
-    }
-
-
-    //打开其他activity后回调结果
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            2 -> {
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    data.data?.let {
-                        LogUtil.d(tag, it.toString())
-                        val bitmap = StorageUtil.getBitmapFromUri(it)
-                        contactImageView.setImageBitmap(bitmap)
-                        val name = StorageUtil.getName()
-                        DBUtil.setAvatar(name)
-                        StorageUtil.saveBitmapToPicture(bitmap, name) //保存图片到本地
-                    }
+    //点击发送按钮后更新聊天界面
+    override fun onClick(v: View?) {
+        when(v){
+            sendMessage->{
+                val content = inputText.text.toString()
+                if (content.isNotEmpty()){
+                    val msg = Msg(content,Msg.TYPE_SENT,contact.imageName)
+                    msgList.add(msg)
+                    //有新消息时刷新RecyclerView中的显示
+                    adapter?.notifyItemInserted(msgList.size-1)
+                    //将RecyclerView定位到最后一行
+                    contactRecycleView.scrollToPosition(msgList.size-1)
+                    inputText.setText("")
                 }
             }
         }
     }
-
-    //更新联系人列表
-    private fun initContact(availableContact: MutableSet<Contact>) {
-        Toast.makeText(this, "更新联系人列表", Toast.LENGTH_SHORT).show()
-        LogUtil.d(tag, "联系人列表长度${availableContact.size}")
-        contactList.clear()     //清空以往保存的联系人信息
-        with(contactList) {
-            for (contact in availableContact)
-                if(contact.imageName=="")
-                    add(Contact(contact.name,contact.IP, "",R.drawable.none))
-                else
-                    add(Contact(contact.name,contact.IP, contact.imageName,R.drawable.none))
-        }
-        val layoutManager = LinearLayoutManager(this)
-        val adapter = ContactAdapter(contactList)
-        contactRecycleView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
-        contactRecycleView.layoutManager = layoutManager
-        contactRecycleView.adapter = adapter
+    //初始化要展示的数据
+    private fun initMsg(contact: Contact){
+        val msg1 = Msg("hello1",Msg.TYPE_SENT,contact.imageName)
+        val msg2 = Msg("123456789123456789123456789123456789123456789123456789123456789123456789" +
+                "123456789123456789123456789123456789123456789123456789123456789123456789",Msg.TYPE_RECEIVED,contact.imageName)
+        val msg3 = Msg("hello1",Msg.TYPE_RECEIVED,contact.imageName)
+        val msg4 = Msg("123456789123456789123456789123456789123456789123456789123456789123456789" +
+                "123456789123456789123456789123456789123456789123456789123456789123456789",Msg.TYPE_SENT,contact.imageName)
+        msgList.add(msg1)
+        msgList.add(msg2)
+        msgList.add(msg3)
+        msgList.add(msg4)
     }
 }

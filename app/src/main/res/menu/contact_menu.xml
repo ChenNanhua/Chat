@@ -12,4 +12,7 @@
     <item
         android:id="@+id/startMyService"
         android:title="startService"/>
+    <item
+        android:id="@+id/test"
+        android:title="@string/test"/>
 </menu>
