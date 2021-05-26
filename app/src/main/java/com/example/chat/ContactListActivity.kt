@@ -20,11 +20,6 @@ class ContactListActivity : AppCompatActivity() {
     private val contactList = ArrayList<Contact>()
     private val tag = "ContactListActivity"
     private val localNet = LocalNet()
-
-    companion object {
-        const val updateRecyclerView = 1
-    }
-
     private val handler = object : Handler(Looper.myLooper()!!) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
@@ -32,13 +27,21 @@ class ContactListActivity : AppCompatActivity() {
             }
         }
     }
+    private val messenger = Messenger(handler)
+
+    companion object {
+        const val updateRecyclerView = 1
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact_list)
-        //搜索局域网用户
-        startService(Intent(this, MyService::class.java))
-        localNet.searchLocal(handler)
+        //开启搜索局域网用户的服务
+        val serviceIntent = Intent(this, MyService::class.java)
+        serviceIntent.putExtra("messenger",messenger)
+        startService(serviceIntent)
+        //动态申请权限
         ActivityCompat.requestPermissions(
             this, arrayOf(
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -47,6 +50,13 @@ class ContactListActivity : AppCompatActivity() {
         )
     }
 
+    override fun onRestart() {
+        super.onRestart()
+        //开启搜索局域网用户的服务
+        val serviceIntent = Intent(this, MyService::class.java)
+        serviceIntent.putExtra("messenger",messenger)
+        startService(serviceIntent)
+    }
     //动态申请权限的回调方法
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -72,14 +82,18 @@ class ContactListActivity : AppCompatActivity() {
                 startActivityForResult(intent, 2)
             }
             R.id.sendMessage -> localNet.sendLocalMessage(LocalNet.availableContact.elementAt(0).IP)
-            R.id.searchLocal -> localNet.searchLocal(handler)
+            R.id.searchLocal -> localNet.searchLocal(messenger)
             R.id.startMyService -> {    //各种调试
                 val uri = StorageUtil.getUri("641")
                 val bitmap = StorageUtil.getBitmapFromUri(uri)
                 contactImageView.setImageBitmap(bitmap)
             }
-            R.id.test ->{
-                startActivity(Intent(this,ContactActivity::class.java))
+            R.id.contactTest ->{
+                //打开聊天界面,传递联系人数据
+                val contact = Contact("test","127.0.0.1","")//拿到联系人数据
+                val intent =Intent(this,ContactActivity::class.java)
+                intent.putExtra("contact",contact)
+                startActivity(intent)
             }
         }
         return true

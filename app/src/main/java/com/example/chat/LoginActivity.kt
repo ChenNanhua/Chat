@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import com.example.chat.chatUtil.DBUtil.db
+import com.example.chat.chatUtil.DBUtil.DB
 import com.example.chat.chatUtil.HashUtil
 import kotlinx.android.synthetic.main.activity_login.*
 
@@ -23,7 +23,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         val autoLoginName = getSharedPreferences("data", Context.MODE_PRIVATE).getString("autoLoginName", "")
         if (autoLoginName != "") {      //存在要自动登录的账号，如果有记住密码则可以自动登录
             editName.setText(autoLoginName)
-            val cursor = db.rawQuery("select * from User where username = ?", arrayOf(autoLoginName))
+            val cursor = DB.rawQuery("select * from User where username = ?", arrayOf(autoLoginName))
             if (cursor.count != 0) {
                 cursor.moveToFirst()
                 val isRemember = cursor.getInt(cursor.getColumnIndex("remember"))
@@ -45,7 +45,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
             R.id.buttonLogin -> {    //登录逻辑
                 val username = editName.text.toString()     //与数据库中保存的账号信息比对
                 val passwordMd5 = HashUtil.md5(editPassword.text.toString())
-                val cursor = db.rawQuery(
+                val cursor = DB.rawQuery(
                     "select * from User where username = ? and passwordMd5 = ?", arrayOf(username, passwordMd5)
                 )
                 if (cursor.count == 0) {  //没有匹配账号，登录失败
@@ -55,9 +55,9 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                 } else {  //成功登录
                     Toast.makeText(this, "登录成功...", Toast.LENGTH_SHORT).show()
                     if (rememberPassword.isChecked)      //保存记住密码信息
-                        db.execSQL("update User set remember = 1 where username = ?", arrayOf(username))
+                        DB.execSQL("update User set remember = 1 where username = ?", arrayOf(username))
                     else
-                        db.execSQL("update User set remember = 0 where username = ?", arrayOf(username))
+                        DB.execSQL("update User set remember = 0 where username = ?", arrayOf(username))
                     if (autoLogin.isChecked)       //保存自动登录信息
                         getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("autoLoginName", username)
                             .apply()

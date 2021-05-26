@@ -1,7 +1,6 @@
 package com.example.chat.chatUtil
 
 import android.content.ContentValues
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -24,7 +23,7 @@ object StorageUtil {
     }
 
     //通过图片name查询数据库中的图片，返回uri
-    fun getUri(name: String = "069fdcff"): Uri {
+    fun getUri(name: String = ""): Uri {
         MyApplication.context.contentResolver?.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             null,

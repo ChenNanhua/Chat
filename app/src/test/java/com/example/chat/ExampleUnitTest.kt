@@ -2,7 +2,9 @@ package com.example.chat
 
 import org.junit.Test
 
-import org.junit.Assert.*
+import android.os.*
+import java.net.InetSocketAddress
+import java.net.Socket
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -12,6 +14,7 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+        val socket = Socket()
+        socket.connect(InetSocketAddress("10.0.2.2", 8080), 200)
     }
 }

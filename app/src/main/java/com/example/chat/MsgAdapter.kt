@@ -14,12 +14,12 @@ import java.lang.IllegalArgumentException
 class MsgAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     inner class LeftViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val msgLeft: TextView = view.msgLeft
-        val msgLeftImage:ImageView = view.msgLeftImage
+        val msgLeftImage: ImageView = view.msgLeftImage
     }
 
     inner class RightViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val msgRight: TextView = view.msgRight
-        val msgRightImage:ImageView = view.msgRightImage
+        val msgRightImage: ImageView = view.msgRightImage
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -40,13 +40,17 @@ class MsgAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<Recycler
         when (holder) {
             is LeftViewHolder -> {
                 holder.msgLeft.text = msg.content
-                val uri = StorageUtil.getUri(msg.imageName)
-                holder.msgLeftImage.setImageBitmap(StorageUtil.getBitmapFromUri(uri))
+                if (msg.imageUri.toString() != "") {
+                    holder.msgLeftImage.setImageBitmap(StorageUtil.getBitmapFromUri(msg.imageUri))
+                } else
+                    holder.msgLeftImage.setImageResource(R.drawable.none)
             }
             is RightViewHolder -> {
                 holder.msgRight.text = msg.content
-                val uri = StorageUtil.getUri(msg.imageName)
-                holder.msgRightImage.setImageBitmap(StorageUtil.getBitmapFromUri(uri))
+                if (msg.imageUri.toString() != "") {
+                    holder.msgRightImage.setImageBitmap(StorageUtil.getBitmapFromUri(msg.imageUri))
+                } else
+                    holder.msgRightImage.setImageResource(R.drawable.none)
             }
             else -> throw IllegalArgumentException()
         }
