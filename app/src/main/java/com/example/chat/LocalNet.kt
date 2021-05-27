@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat.getSystemService
 import com.example.chat.chatUtil.*
 import kotlinx.coroutines.*
 import java.io.*
+import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -60,28 +61,41 @@ class LocalNet {
 
         private fun answer(string: String) {
             when (string) {
-                "yourInfo" -> {
+                "yourInfo" -> {     //请求用户信息
                     send.println(android.os.Build.MODEL)
                     sendImage(socket)
                     val name = get.readLine()
                     val bitmapName = getImage(socket)
                     val address = socket.remoteSocketAddress.toString()
-                    addAddress(Contact(name, address, bitmapName))
+                    addAddress(Contact(name, address, StorageUtil.getUri(bitmapName).toString()))
                     //更新UI
                     val msg = Message()
                     msg.what = ContactListActivity.updateRecyclerView
                     messenger.send(msg)
-                    socket.close()
+                }
+                "message" -> {        //发送一条消息
+                    val name = get.readLine()
+                    val content = get.readLine()
+                    if (!ContactActivity.contentMap.containsKey(name))
+                        ContactActivity.contentMap[name] = ArrayList()
+                    ContactActivity.contentMap[name]?.add(content)
                 }
                 else -> send.println(string)
             }
+            socket.close()
         }
     }
 
     //创建服务器，接收客户端的连接请求
     fun startServer(messenger: Messenger) {  //接收发来的消息
         thread {
-            val serverSocket = ServerSocket(port)
+            val serverSocket: ServerSocket
+            try {
+                serverSocket = ServerSocket(port)
+            } catch (e: BindException) {
+                LogUtil.d(tag, "服务器已绑定:$port")
+                return@thread
+            }
             lateinit var socket: Socket
             LogUtil.d(tag, "启动服务器:$port")
             var count = 0
@@ -140,7 +154,13 @@ class LocalNet {
                                     send.println("testName")    //发送自身信息
                                     sendImage(socket)
                                     send.println("END")         //发送断开连接信号
-                                    addAddress(Contact(name, tempAddress, bitmapName))     //将建立过连接的主机添加到可访问主机中
+                                    addAddress(
+                                        Contact(
+                                            name,
+                                            tempAddress,
+                                            StorageUtil.getUri(bitmapName).toString()
+                                        )
+                                    )     //将建立过连接的主机添加到可访问主机中
                                 } catch (e: java.net.SocketTimeoutException) {
                                     //LogUtil.e(tag, e.message.toString())
                                 } catch (e: java.net.ConnectException) {
@@ -219,7 +239,7 @@ class LocalNet {
     }
 
     //在局域网中发送消息
-    fun sendLocalMessage(message: String, ip: String = "0.0.0.0") {
+    fun sendMessage(name: String, message: String, ip: String = "0.0.0.0") {
         thread {
             var socket: Socket? = null
             var send: PrintWriter? = null
@@ -228,10 +248,10 @@ class LocalNet {
                 socket = Socket(ip, port)
                 get = BufferedReader(InputStreamReader(socket.getInputStream()))
                 send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+                send.println("message")
+                send.println(name)
                 send.println(message)
                 send.println("END")
-                val str: String = get.readLine()
-                LogUtil.d(tag, "客户端收到消息: $str")
             } catch (e: IOException) {
                 e.printStackTrace()
             } finally {

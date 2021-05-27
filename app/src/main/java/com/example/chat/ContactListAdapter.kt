@@ -2,6 +2,7 @@ package com.example.chat
 
 
 import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,7 +31,7 @@ class ContactListAdapter(private val contactList: List<Contact>) :
             val contact = contactList[position] //拿到联系人数据
             val intent =
                 Intent(MyApplication.context, ContactActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.putExtra("contact", contact)
+            intent.putExtra("contact",contact)
             startActivity(MyApplication.context, intent, null)
         }
         return viewHolder
@@ -40,11 +41,10 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         val contact = contactList[position]
         holder.contactName.text = contact.name
         holder.contactIP.text = contact.IP
-        if (contact.imageName == "")
-            holder.contactImage.setImageResource(contact.imageId)
+        if (contact.imageUriString == "")
+            holder.contactImage.setImageResource(R.drawable.none)
         else {
-            val uri = StorageUtil.getUri(contact.imageName)
-            holder.contactImage.setImageBitmap(StorageUtil.getBitmapFromUri(uri))
+            holder.contactImage.setImageBitmap(StorageUtil.getBitmapFromUri(Uri.parse(contact.imageUriString)))
         }
     }
 

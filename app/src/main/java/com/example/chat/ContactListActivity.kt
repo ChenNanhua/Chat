@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.*
 import android.view.Menu
 import android.view.MenuItem
@@ -39,7 +40,7 @@ class ContactListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_contact_list)
         //开启搜索局域网用户的服务
         val serviceIntent = Intent(this, MyService::class.java)
-        serviceIntent.putExtra("messenger",messenger)
+        serviceIntent.putExtra("messenger", messenger)
         startService(serviceIntent)
         //动态申请权限
         ActivityCompat.requestPermissions(
@@ -54,9 +55,10 @@ class ContactListActivity : AppCompatActivity() {
         super.onRestart()
         //开启搜索局域网用户的服务
         val serviceIntent = Intent(this, MyService::class.java)
-        serviceIntent.putExtra("messenger",messenger)
+        serviceIntent.putExtra("messenger", messenger)
         startService(serviceIntent)
     }
+
     //动态申请权限的回调方法
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -81,18 +83,18 @@ class ContactListActivity : AppCompatActivity() {
                 intent.type = "image/*"
                 startActivityForResult(intent, 2)
             }
-            R.id.sendMessage -> localNet.sendLocalMessage(LocalNet.availableContact.elementAt(0).IP)
+            R.id.sendMessage -> {}
             R.id.searchLocal -> localNet.searchLocal(messenger)
             R.id.startMyService -> {    //各种调试
                 val uri = StorageUtil.getUri("641")
                 val bitmap = StorageUtil.getBitmapFromUri(uri)
                 contactImageView.setImageBitmap(bitmap)
             }
-            R.id.contactTest ->{
+            R.id.contactTest -> {
                 //打开聊天界面,传递联系人数据
-                val contact = Contact("test","127.0.0.1","")//拿到联系人数据
-                val intent =Intent(this,ContactActivity::class.java)
-                intent.putExtra("contact",contact)
+                val contact = Contact("test", "127.0.0.1", "")//拿到联系人数据
+                val intent = Intent(this, ContactActivity::class.java)
+                intent.putExtra("contact", contact)
                 startActivity(intent)
             }
         }
@@ -126,10 +128,7 @@ class ContactListActivity : AppCompatActivity() {
         contactList.clear()     //清空以往保存的联系人信息
         with(contactList) {
             for (contact in availableContact)
-                if(contact.imageName=="")
-                    add(Contact(contact.name,contact.IP, "",R.drawable.none))
-                else
-                    add(Contact(contact.name,contact.IP, contact.imageName,R.drawable.none))
+                add(Contact(contact.name, contact.IP, contact.imageUriString))
         }
         val layoutManager = LinearLayoutManager(this)
         val adapter = ContactListAdapter(contactList)
