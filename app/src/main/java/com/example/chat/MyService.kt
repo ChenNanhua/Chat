@@ -20,17 +20,19 @@ class MyService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         LogUtil.d(tag, "onStartCommand")
         val messenger = intent?.extras?.get("messenger") as Messenger
-        localNet.searchLocal(messenger)
         localNet.startServer(messenger)
-        return super.onStartCommand(intent, flags, startId)
+        localNet.searchLocal(messenger)
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
         LogUtil.d(tag, "onDestroy")
         LogUtil.w(tag, "MyService被关闭")
-        localNet.job.cancel()
+        MyApplication.job.cancel()
+        LocalNet.serverSocket.close()
     }
 }

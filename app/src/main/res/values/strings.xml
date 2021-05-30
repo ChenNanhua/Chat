@@ -22,9 +22,11 @@
     <string name="avatar">头像</string>
     <string name="send">send</string>
     <string name="get">get</string>
+    <string name="setAvatar">设置头像</string>
     <string name="search_local">searchIP</string>
     <string name="image">图片</string>
     <string name="inputSomething">输入…</string>
     <string name="contactTest">contactTest</string>
     <string name="startService">startService</string>
+    <string name="contactList">局域网联系人界面</string>
 </resources>

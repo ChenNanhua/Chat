@@ -10,7 +10,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.example.chat.chatUtil.StorageUtil
+import com.example.chat.chatUtil.ImageUtil
+import com.example.chat.data.Contact
 import kotlinx.android.synthetic.main.contact_list_item.view.*
 
 class ContactListAdapter(private val contactList: List<Contact>) :
@@ -44,7 +45,7 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         if (contact.imageUriString == "")
             holder.contactImage.setImageResource(R.drawable.none)
         else {
-            holder.contactImage.setImageBitmap(StorageUtil.getBitmapFromUri(Uri.parse(contact.imageUriString)))
+            holder.contactImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(contact.imageUriString)))
         }
     }
 

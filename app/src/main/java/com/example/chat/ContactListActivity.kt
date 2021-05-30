@@ -4,44 +4,52 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.*
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
+import com.example.chat.data.Contact
+import com.example.chat.data.Msg
 import kotlinx.android.synthetic.main.activity_contact_list.*
+import java.lang.Exception
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 
 
-class ContactListActivity : AppCompatActivity() {
+class ContactListActivity : MyActivity() {
     private val contactList = ArrayList<Contact>()
-    private val tag = "ContactListActivity"
-    private val localNet = LocalNet()
-    private val handler = object : Handler(Looper.myLooper()!!) {
-        override fun handleMessage(msg: Message) {
-            when (msg.what) {
-                updateRecyclerView -> initContact(LocalNet.availableContact)
-            }
-        }
-    }
-    private val messenger = Messenger(handler)
-
     companion object {
         const val updateRecyclerView = 1
     }
-
+    //更新联系人列表
+    private val handler = object : Handler(Looper.myLooper()!!) {
+        override fun handleMessage(msg: Message) {
+            when (msg.what) {
+                updateRecyclerView -> {
+                    initContact()
+                    MyData.initMsgMap()     //更新联系人的历史消息
+                }
+            }
+        }
+    }
+    private val messenger = Messenger(handler)  //发送到MyService的信使
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact_list)
-        //开启搜索局域网用户的服务
-        val serviceIntent = Intent(this, MyService::class.java)
-        serviceIntent.putExtra("messenger", messenger)
-        startService(serviceIntent)
+        setSupportActionBar(contactListToolbar)
+        //toolbar设置头像
+        ImageUtil.getBitmapFromUri(MyData.myImageUri)?.let {
+            contactListToolbarImageView.setImageBitmap(it)
+        }
+        //初始化已保存的联系人列表
+        MyData.initSavedContact()
         //动态申请权限
         ActivityCompat.requestPermissions(
             this, arrayOf(
@@ -49,10 +57,24 @@ class ContactListActivity : AppCompatActivity() {
                 Manifest.permission.READ_EXTERNAL_STORAGE
             ), 1
         )
+        //添加部分测试操作
+        //test()
     }
-
-    override fun onRestart() {
-        super.onRestart()
+    private fun test(){
+        thread {
+            for (i in 1..5){
+                DBUtil.DB.execSQL(
+                    "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
+                    arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
+                        MyData.username, MyData.username, Msg.TYPE_RECEIVED, i.toString(), SimpleDateFormat.getDateTimeInstance().format(Date())
+                    )
+                )
+                Thread.sleep(2000)
+            }
+        }
+    }
+    override fun onStart() {
+        super.onStart()
         //开启搜索局域网用户的服务
         val serviceIntent = Intent(this, MyService::class.java)
         serviceIntent.putExtra("messenger", messenger)
@@ -62,33 +84,40 @@ class ContactListActivity : AppCompatActivity() {
     //动态申请权限的回调方法
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
-        } else {    //Permission Denied
-            Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
+        } else {    //获取权限失败
+            Toast.makeText(this, "请授予必要权限...", Toast.LENGTH_SHORT).show()
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     //创建menu菜单
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.contact_menu, menu)
+        menuInflater.inflate(R.menu.contact_list_menu, menu)
         return true
     }
 
     //menu菜单添加响应
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.getMessage -> {    //打开相册,选择要作为头像的图片
+            R.id.setAvatar -> {    //打开相册,选择要作为头像的图片
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
                 intent.type = "image/*"
                 startActivityForResult(intent, 2)
             }
-            R.id.sendMessage -> {}
-            R.id.searchLocal -> localNet.searchLocal(messenger)
+            R.id.sendMessage -> {
+            }
+            R.id.searchLocal -> {//开启搜索局域网用户的服务
+                val serviceIntent = Intent(this, MyService::class.java)
+                serviceIntent.putExtra("messenger", messenger)
+                startService(serviceIntent)
+            }
             R.id.startMyService -> {    //各种调试
-                val uri = StorageUtil.getUri("641")
-                val bitmap = StorageUtil.getBitmapFromUri(uri)
-                contactImageView.setImageBitmap(bitmap)
+                ImageUtil.getUri("641").let {
+                    ImageUtil.getBitmapFromUri(it)?.let { bitmap ->
+                        contactListToolbarImageView.setImageBitmap(bitmap)
+                    }
+                }
             }
             R.id.contactTest -> {
                 //打开聊天界面,传递联系人数据
@@ -109,12 +138,16 @@ class ContactListActivity : AppCompatActivity() {
             2 -> {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     data.data?.let {
-                        LogUtil.d(tag, it.toString())
-                        val bitmap = StorageUtil.getBitmapFromUri(it)
-                        contactImageView.setImageBitmap(bitmap)
-                        val name = StorageUtil.getName()
-                        DBUtil.setAvatar(name)
-                        StorageUtil.saveBitmapToPicture(bitmap, name) //保存图片到本地
+                        LogUtil.d(tag, "选取的照片Uri:$it")
+                        ImageUtil.getBitmapFromUri(it)?.let { bitmap ->
+                            //标题栏设置头像，随机生成保存头像的文件名
+                            contactListToolbarImageView.setImageBitmap(bitmap)
+                            val name = ImageUtil.getName()
+                            //保存图片到本app文件夹下
+                            ImageUtil.saveBitmapToPicture(bitmap, name)?.let { saveUri ->
+                                DBUtil.setAvatarUser(MyData.username, saveUri, name)
+                            }
+                        }
                     }
                 }
             }
@@ -122,13 +155,13 @@ class ContactListActivity : AppCompatActivity() {
     }
 
     //更新联系人列表
-    private fun initContact(availableContact: MutableSet<Contact>) {
-        Toast.makeText(this, "更新联系人列表", Toast.LENGTH_SHORT).show()
-        LogUtil.d(tag, "联系人列表长度${availableContact.size}")
+    private fun initContact() {
+        LogUtil.d(tag, "更新联系人列表")
         contactList.clear()     //清空以往保存的联系人信息
         with(contactList) {
-            for (contact in availableContact)
-                add(Contact(contact.name, contact.IP, contact.imageUriString))
+            MyData.accessContact.forEach() {
+                add(it.value)
+            }
         }
         val layoutManager = LinearLayoutManager(this)
         val adapter = ContactListAdapter(contactList)

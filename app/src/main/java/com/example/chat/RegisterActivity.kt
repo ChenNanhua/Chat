@@ -3,7 +3,6 @@ package com.example.chat
 import android.app.Activity
 import android.content.Intent
 import android.database.sqlite.SQLiteConstraintException
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -11,8 +10,7 @@ import com.example.chat.chatUtil.*
 import kotlinx.android.synthetic.main.activity_register.*
 import java.lang.Exception
 
-class RegisterActivity : AppCompatActivity(), View.OnClickListener {
-    private val tag = "RegisterActivity"
+class RegisterActivity : MyActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
@@ -33,11 +31,11 @@ class RegisterActivity : AppCompatActivity(), View.OnClickListener {
                     editPasswordRepeat.setText("")
                 } else {
                     val passwordMd5 = HashUtil.md5(password)
-                    val db = MyDBHelper(this).writableDatabase
+                    val db = DBUtil.DB
                     try {
                         db.execSQL(
-                            "insert into User(username,passwordMd5,remember) values (?,?,?)",
-                            arrayOf(username, passwordMd5, 0)
+                            "insert into user(username,passwordMd5,remember,avatarUri) values (?,?,?,?)",
+                            arrayOf(username, passwordMd5, 0, "123")
                         )
                         //返回数据给MainActivity
                         val intent = Intent()
@@ -46,7 +44,7 @@ class RegisterActivity : AppCompatActivity(), View.OnClickListener {
                         setResult(Activity.RESULT_OK, intent)
                         finish()
                     } catch (e: SQLiteConstraintException) {
-                        LogUtil.w(tag,"注册时用户名重复${e.toString()}")
+                        LogUtil.w(tag,"注册时用户名重复${e}")
                         Toast.makeText(this, "用户名已被注册", Toast.LENGTH_SHORT).show()
                         editName.setText("")
                         editPassword.setText("")

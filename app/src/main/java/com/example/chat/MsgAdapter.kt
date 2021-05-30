@@ -6,7 +6,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.chat.chatUtil.StorageUtil
+import com.example.chat.chatUtil.ImageUtil
+import com.example.chat.data.Msg
 import kotlinx.android.synthetic.main.msg_left_item.view.*
 import kotlinx.android.synthetic.main.msg_right_item.view.*
 import java.lang.IllegalArgumentException
@@ -41,14 +42,14 @@ class MsgAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<Recycler
             is LeftViewHolder -> {
                 holder.msgLeft.text = msg.content
                 if (msg.imageUri.toString() != "") {
-                    holder.msgLeftImage.setImageBitmap(StorageUtil.getBitmapFromUri(msg.imageUri))
+                    holder.msgLeftImage.setImageBitmap(ImageUtil.getBitmapFromUri(msg.imageUri))
                 } else
                     holder.msgLeftImage.setImageResource(R.drawable.none)
             }
             is RightViewHolder -> {
                 holder.msgRight.text = msg.content
                 if (msg.imageUri.toString() != "") {
-                    holder.msgRightImage.setImageBitmap(StorageUtil.getBitmapFromUri(msg.imageUri))
+                    holder.msgRightImage.setImageBitmap(ImageUtil.getBitmapFromUri(msg.imageUri))
                 } else
                     holder.msgRightImage.setImageResource(R.drawable.none)
             }

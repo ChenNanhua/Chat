@@ -1,2 +1,7 @@
 telnet 127.0.0.1 port
 redir add tcp:8080:8080
+
+Date()函数，日期减去1900，月份减去1，其余不变
+
+//主线程耗时操作提示
+The application may be doing too much work on its main thread.

@@ -9,10 +9,11 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.example.chat.MyApplication
 import java.io.FileDescriptor
+import java.lang.Exception
 import java.util.*
 
 
-object StorageUtil {
+object ImageUtil {
     private const val tag = "StorageUtil"
     private val path = "${Environment.DIRECTORY_PICTURES}/Chat/"
 
@@ -31,19 +32,19 @@ object StorageUtil {
             arrayOf("$name%"),
             null
         )?.use {
-                if (it.moveToFirst()) {
-                    LogUtil.d(tag,"查询图片时获取的图片数量：${it.count}")
-                    //id即为图片在文件系统中的id
-                    val id = it.getString(it.getColumnIndex(MediaStore.MediaColumns._ID))
-                    //通过id拼凑出图片uri并返回
-                    return Uri.parse("content://media/external/images/media/$id")
-                }
+            if (it.moveToFirst()) {
+                LogUtil.d(tag, "查询图片时获取的图片数量：${it.count}")
+                //id即为图片在文件系统中的id
+                val id = it.getString(it.getColumnIndex(MediaStore.MediaColumns._ID))
+                //通过id拼凑出图片uri并返回
+                return Uri.parse("content://media/external/images/media/$id")
             }
+        }
         return Uri.parse("")
     }
 
     //保存bitmap到相册(适配安卓11)
-    fun saveBitmapToPicture(bitmap: Bitmap, name: String, type: String = "image/jpeg") {
+    fun saveBitmapToPicture(bitmap: Bitmap, name: String, type: String = "image/jpeg"): Uri? {
         val imageTime = System.currentTimeMillis()
         val resolver = MyApplication.context.contentResolver
         val contentValues = ContentValues().apply {
@@ -60,26 +61,31 @@ object StorageUtil {
         }
         val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
         LogUtil.d(tag, "保存到相册的URI: $uri")
-        uri?.let {
+        uri?.let { trueUri ->
             resolver.openOutputStream(uri).use {
                 when (type) {
                     "image/jpeg" -> bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
                     "image/png" -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
                     else -> bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
                 }
-
             }
+            return trueUri
         }
+        return null
     }
 
     //通过输入的uri获取bitmap
-    fun getBitmapFromUri(uri: Uri): Bitmap =
-        MyApplication.context.contentResolver.openFileDescriptor(uri, "r").use {
-            BitmapFactory.decodeFileDescriptor(it?.fileDescriptor)
-        }
+    fun getBitmapFromUri(uri: Uri): Bitmap? {
+        try {
+            MyApplication.context.contentResolver.openFileDescriptor(uri, "r").use {
+                return BitmapFactory.decodeFileDescriptor(it?.fileDescriptor)
+            }
+        } catch (e: Exception) {}
+        return null
+    }
 
     //通过输入的uri获取FileDescriptor
-    fun getFileDescriptor(uri: Uri): FileDescriptor {
-        return MyApplication.context.contentResolver.openFileDescriptor(uri, "r")!!.fileDescriptor
+    fun getFileDescriptor(uri: Uri): FileDescriptor? {
+        return MyApplication.context.contentResolver.openFileDescriptor(uri, "r")?.fileDescriptor
     }
 }
