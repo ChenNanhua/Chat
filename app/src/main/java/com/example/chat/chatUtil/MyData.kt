@@ -72,7 +72,6 @@ object MyData {
                     } while (it.moveToNext())
                 }
             }
-            println(msgMap)
         }
     }
 

@@ -15,7 +15,6 @@ import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import kotlinx.android.synthetic.main.activity_contact_list.*
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -38,7 +37,7 @@ class ContactListActivity : MyActivity() {
             }
         }
     }
-    private val messenger = Messenger(handler)  //发送到MyService的信使
+    private val contactListMessenger = Messenger(handler)  //发送到MyService的信使
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +59,7 @@ class ContactListActivity : MyActivity() {
         //添加部分测试操作
         //test()
     }
+
     private fun test(){
         thread {
             for (i in 1..5){
@@ -73,11 +73,12 @@ class ContactListActivity : MyActivity() {
             }
         }
     }
+
     override fun onStart() {
         super.onStart()
         //开启搜索局域网用户的服务
         val serviceIntent = Intent(this, MyService::class.java)
-        serviceIntent.putExtra("messenger", messenger)
+        serviceIntent.putExtra("contactListMessenger", contactListMessenger)
         startService(serviceIntent)
     }
 
@@ -105,11 +106,10 @@ class ContactListActivity : MyActivity() {
                 intent.type = "image/*"
                 startActivityForResult(intent, 2)
             }
-            R.id.sendMessage -> {
-            }
-            R.id.searchLocal -> {//开启搜索局域网用户的服务
+            R.id.sendMessage -> { }
+            R.id.searchIP -> {//开启搜索局域网用户的服务
                 val serviceIntent = Intent(this, MyService::class.java)
-                serviceIntent.putExtra("messenger", messenger)
+                serviceIntent.putExtra("contactListMessenger", contactListMessenger)
                 startService(serviceIntent)
             }
             R.id.startMyService -> {    //各种调试

@@ -22,7 +22,7 @@ class MyService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         LogUtil.d(tag, "onStartCommand")
-        val messenger = intent?.extras?.get("messenger") as Messenger
+        val messenger = intent?.extras?.get("contactListMessenger") as Messenger
         localNet.startServer(messenger)
         localNet.searchLocal(messenger)
         return START_NOT_STICKY

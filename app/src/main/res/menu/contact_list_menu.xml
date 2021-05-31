@@ -7,8 +7,8 @@
         android:id="@+id/sendMessage"
         android:title="@string/send"/>
     <item
-        android:id="@+id/searchLocal"
-        android:title="@string/search_local"/>
+        android:id="@+id/searchIP"
+        android:title="@string/search_IP"/>
     <item
         android:id="@+id/startMyService"
         android:title="@string/startService"/>

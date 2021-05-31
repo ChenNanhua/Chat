@@ -23,7 +23,7 @@
     <string name="send">send</string>
     <string name="get">get</string>
     <string name="setAvatar">设置头像</string>
-    <string name="search_local">searchIP</string>
+    <string name="search_IP">searchIP</string>
     <string name="image">图片</string>
     <string name="inputSomething">输入…</string>
     <string name="contactTest">contactTest</string>
