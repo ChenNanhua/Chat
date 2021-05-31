@@ -9,6 +9,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.example.chat.MyApplication
 import java.io.FileDescriptor
+import java.io.InputStream
 import java.lang.Exception
 import java.util.*
 
@@ -24,7 +25,7 @@ object ImageUtil {
     }
 
     //通过图片name查询数据库中的图片，返回uri
-    fun getUri(name: String = ""): Uri {
+    fun getUri(name: String): Uri {
         MyApplication.context.contentResolver?.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             null,
@@ -85,7 +86,7 @@ object ImageUtil {
     }
 
     //通过输入的uri获取FileDescriptor
-    fun getFileDescriptor(uri: Uri): FileDescriptor? {
-        return MyApplication.context.contentResolver.openFileDescriptor(uri, "r")?.fileDescriptor
+    fun getInputStream(uri: Uri): InputStream? {
+        return MyApplication.context.contentResolver.openInputStream(uri)
     }
 }

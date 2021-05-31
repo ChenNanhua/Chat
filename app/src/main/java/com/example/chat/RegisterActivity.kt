@@ -35,7 +35,7 @@ class RegisterActivity : MyActivity(), View.OnClickListener {
                     try {
                         db.execSQL(
                             "insert into user(username,passwordMd5,remember,avatarUri) values (?,?,?,?)",
-                            arrayOf(username, passwordMd5, 0, "123")
+                            arrayOf(username, passwordMd5, 0, "")
                         )
                         //返回数据给MainActivity
                         val intent = Intent()

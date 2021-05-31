@@ -23,7 +23,7 @@ object DBUtil {
                 arrayOf(contactName, avatarUri.toString(), avatarName)
             )
         } catch (e: Exception) {
-            LogUtil.d(tag, "contact插入了重复数据")
+            LogUtil.d(tag, "数据库contact插入了重复数据")
         }
     }
 
