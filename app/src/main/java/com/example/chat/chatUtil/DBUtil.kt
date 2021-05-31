@@ -16,6 +16,7 @@ object DBUtil {
         MyData.myImageUri = avatarUri
     }
 
+    //更新数据库中的联系人信息
     fun setAvatarContact(contactName: String, avatarUri: Uri, avatarName: String) {
         try {
             DB.execSQL(
@@ -24,7 +25,13 @@ object DBUtil {
             )
         } catch (e: Exception) {
             LogUtil.d(tag, "数据库contact插入了重复数据")
+            DB.execSQL(
+                "update contact set avatarUri = ?,avatarName = ? where contactName = ?",
+                arrayOf(avatarUri.toString(), avatarName,contactName)
+            )
+            LogUtil.d(tag, "改为更新数据")
         }
+        MyData.savedContact[contactName] = avatarUri.toString()
     }
 
     fun close() {

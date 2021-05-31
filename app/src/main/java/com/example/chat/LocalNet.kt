@@ -62,11 +62,11 @@ class LocalNet {
                     //返回自身信息
                     send.println(MyData.username)
                     if (get.readLine() == "YES")
-                        if (MyData.myImageUri.toString()=="")
+                        if (MyData.myImageUri.toString() == "")
                             send.println("NO")
                         else {
                             send.println("YES")
-                            sendImage(socket,MyData.myImageUri)
+                            sendImage(socket, MyData.myImageUri)
                         }
                     //获取对方信息
                     val name = get.readLine()
@@ -75,12 +75,14 @@ class LocalNet {
                     }
                     val imageUri: Uri
                     //有头像的联系人不用请求头像
-                    imageUri = if (MyData.savedContact.containsKey(name)) {
+                    imageUri = if (MyData.savedContact.containsKey(name)
+                        && MyData.savedContact[name] != ""
+                    ){
                         send.println("NO")
                         Uri.parse(MyData.savedContact[name])
                     } else {
                         send.println("YES")
-                        if (get.readLine()=="NO")
+                        if (get.readLine() == "NO")
                             Uri.parse("")
                         else getImage(socket, name)
                     }
@@ -97,7 +99,7 @@ class LocalNet {
                     val imageUri = Uri.parse("")
                     if (!MyData.tempMsgMap.containsKey(name))
                         MyData.tempMsgMap[name] = ArrayList()
-                    MyData.tempMsgMap[name]?.add(Msg(content, Msg.TYPE_RECEIVED,imageUri))
+                    MyData.tempMsgMap[name]?.add(Msg(content, Msg.TYPE_RECEIVED, imageUri))
                 }
                 else -> send.println(string)
             }
@@ -141,7 +143,7 @@ class LocalNet {
     fun searchLocal(messenger: Messenger) {
         MyData.accessContact.clear()    //清空已保存其他用户的数据
         var address = getIp()       //获取本机IP
-        //address = "172.16.0.0"      //TODO 蒲公英组网时所用，最后应删去
+        address = "172.16.0.0"      //TODO 蒲公英组网时所用，最后应删去
         LogUtil.d(tag, "客户端正在搜寻,客户端IP: $address")
         val addressList: MutableList<String> = address.split(".").toMutableList()
         thread {
@@ -164,17 +166,19 @@ class LocalNet {
                                     get = BufferedReader(InputStreamReader(socket.getInputStream()))
                                     send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
                                     //与其他用户交换信息
-                                    LogUtil.d(tag,"与其他用户交换信息: $tempIP")
+                                    LogUtil.d(tag, "与其他用户交换信息: $tempIP")
                                     send.println("yourInfo")    //发送获取主机信息的信号
                                     val name = get.readLine()
                                     val imageUri: Uri
                                     //有头像的联系人不用请求头像
-                                    imageUri = if (MyData.savedContact.containsKey(name)) {
+                                    imageUri = if (MyData.savedContact.containsKey(name)
+                                        && MyData.savedContact[name] != ""
+                                    ) {
                                         send.println("NO")
                                         Uri.parse(MyData.savedContact[name])
                                     } else {
                                         send.println("YES")
-                                        if (get.readLine()=="NO")
+                                        if (get.readLine() == "NO")
                                             Uri.parse("")
                                         else getImage(socket, name)
                                     }
@@ -183,11 +187,11 @@ class LocalNet {
                                     //发送自身信息
                                     send.println(MyData.username)
                                     if (get.readLine() == "YES")
-                                        if (MyData.myImageUri.toString()=="")
+                                        if (MyData.myImageUri.toString() == "")
                                             send.println("NO")
                                         else {
                                             send.println("YES")
-                                            sendImage(socket,MyData.myImageUri)
+                                            sendImage(socket, MyData.myImageUri)
                                         }
                                     //发送断开连接信号
                                     send.println("END")
@@ -218,7 +222,7 @@ class LocalNet {
     }
 
     //服务器端发送图片
-    fun sendImage(socket: Socket, uri:Uri) {
+    fun sendImage(socket: Socket, uri: Uri) {
         val dataOutputStream = DataOutputStream(socket.getOutputStream())
         val dataInputStream: DataInputStream
         try {
@@ -237,13 +241,13 @@ class LocalNet {
         while (len > 0) {
             totalLen += len
             dataOutputStream.writeInt(len)  //发送接下来的字节长度
-            LogUtil.e(tag,"服务器发送数据长度:$len")
+            LogUtil.e(tag, "服务器发送数据长度:$len")
             dataOutputStream.write(byte, 0, len)    //发送字节数据
             dataOutputStream.flush()        //刷新缓冲
             len = dataInputStream.read(byte)//len==-1代表读取到末尾
         }
         dataOutputStream.writeInt(999999)   //999999 约定的退出符号
-        LogUtil.e(tag,"服务器发送数据长度:999999")
+        LogUtil.e(tag, "服务器发送数据长度:999999")
         LogUtil.e(tag, "服务器发送一张图片:$uri,图片大小:$totalLen")
     }
 
@@ -258,7 +262,7 @@ class LocalNet {
         var totalLen = 0
         try {
             var len = dataInputStream.readInt()
-            LogUtil.e(tag,"客户端接收数据长度:$len")
+            LogUtil.e(tag, "客户端接收数据长度:$len")
             while (len > 0) {
                 if (len == 999999) break
                 totalLen += len
@@ -306,8 +310,8 @@ class LocalNet {
     //为多线程提供的锁
     @Synchronized
     private fun addAddress(contact: Contact) {
-        if(MyData.accessContact.containsKey(contact.name))//已有相同用户直接退出
-                return
+        if (MyData.accessContact.containsKey(contact.name))//已有相同用户直接跳过
+            return
         MyData.accessContact[contact.name] = contact
     }
 
