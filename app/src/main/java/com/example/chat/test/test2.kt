@@ -1,26 +1,28 @@
 package com.example.chat.test
 
 import com.example.chat.chatUtil.DBUtil
+import com.example.chat.chatUtil.MyData
 import com.example.chat.data.Msg
+import com.example.chat.data.TimeMsg
 import java.text.SimpleDateFormat
 import java.util.*
 
 fun main() {
-    println(SimpleDateFormat.getDateTimeInstance().format(Date(121, 4, 30, 8, 29, 0)))
-    println(Date(System.currentTimeMillis() - 1000 * 60))
+    for (i in 0 until 10)
+        println(i)
 }
 
 fun insert() {
     DBUtil.DB.execSQL(
         "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
         arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
-            "test", "test", Msg.TYPE_RECEIVED, "添加的测试", SimpleDateFormat.getDateTimeInstance().format(Date())
+            "test", "test", Msg.TYPE_RECEIVED, "添加的测试", TimeMsg.getDate()
         )
     )
     DBUtil.DB.execSQL(
         "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
         arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
-            "test", "test", Msg.TYPE_RECEIVED, "添加的测试1", SimpleDateFormat.getDateTimeInstance().format(Date())
+            "test", "test", Msg.TYPE_RECEIVED, "添加的测试1", TimeMsg.getDate()
         )
     )
 }

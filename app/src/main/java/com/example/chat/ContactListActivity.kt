@@ -14,18 +14,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
+import com.example.chat.data.TimeMsg
 import kotlinx.android.synthetic.main.activity_contact_list.*
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 
 
 class ContactListActivity : MyActivity() {
     private val contactList = ArrayList<Contact>()
+
     companion object {
         const val updateRecyclerView = 1
     }
+
     //更新联系人列表
     private val handler = object : Handler(Looper.myLooper()!!) {
         override fun handleMessage(msg: Message) {
@@ -42,7 +43,7 @@ class ContactListActivity : MyActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact_list)
-        setSupportActionBar(contactListToolbar)
+        setSupportActionBar(contactToolbar)
         //toolbar设置头像
         ImageUtil.getBitmapFromUri(MyData.myImageUri)?.let {
             contactListToolbarImageView.setImageBitmap(it)
@@ -56,17 +57,21 @@ class ContactListActivity : MyActivity() {
                 Manifest.permission.READ_EXTERNAL_STORAGE
             ), 1
         )
+        //开启搜索局域网用户的服务
+        val serviceIntent = Intent(this, MyService::class.java)
+        serviceIntent.putExtra("contactListMessenger", contactListMessenger)
+        startService(serviceIntent)
         //添加部分测试操作
         //test()
     }
 
-    private fun test(){
+    private fun test() {
         thread {
-            for (i in 1..5){
+            for (i in 1..5) {
                 DBUtil.DB.execSQL(
                     "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
                     arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
-                        MyData.username, MyData.username, Msg.TYPE_RECEIVED, i.toString(), SimpleDateFormat.getDateTimeInstance().format(Date())
+                        MyData.username, MyData.username, Msg.TYPE_RECEIVED, i.toString(), TimeMsg.getDate()
                     )
                 )
                 Thread.sleep(2000)
@@ -76,10 +81,6 @@ class ContactListActivity : MyActivity() {
 
     override fun onStart() {
         super.onStart()
-        //开启搜索局域网用户的服务
-        val serviceIntent = Intent(this, MyService::class.java)
-        serviceIntent.putExtra("contactListMessenger", contactListMessenger)
-        startService(serviceIntent)
     }
 
     //动态申请权限的回调方法
@@ -106,7 +107,9 @@ class ContactListActivity : MyActivity() {
                 intent.type = "image/*"
                 startActivityForResult(intent, 2)
             }
-            R.id.sendMessage -> { }
+            R.id.sendMessage -> {
+                DBUtil.DB.execSQL("delete from msg")
+            }
             R.id.searchIP -> {//开启搜索局域网用户的服务
                 val serviceIntent = Intent(this, MyService::class.java)
                 serviceIntent.putExtra("contactListMessenger", contactListMessenger)

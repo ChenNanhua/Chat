@@ -7,9 +7,9 @@
 
     <ImageView
         android:id="@+id/contactImage"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_margin="6dp"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:layout_margin="3dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="MissingConstraints"

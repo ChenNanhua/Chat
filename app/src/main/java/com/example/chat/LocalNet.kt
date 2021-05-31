@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat.getSystemService
 import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
+import com.example.chat.data.TimeMsg
+import kotlinx.android.synthetic.main.activity_contact.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.*
@@ -25,7 +27,11 @@ class LocalNet {
     }
 
     //服务器处理线程
-    inner class ServerThread(private val socket: Socket, private val messenger: Messenger, private val count: Int = 0) :
+    inner class ServerThread(
+        private val socket: Socket,
+        private val contactListMessenger: Messenger,
+        private val count: Int = 0
+    ) :
         Thread() {
         private val tag = "LocalNetServerThread"
         private lateinit var get: BufferedReader
@@ -70,14 +76,18 @@ class LocalNet {
                         }
                     //获取对方信息
                     val name = get.readLine()
-                    val ip = with(socket.remoteSocketAddress) {
-                        this.toString().split("/")[0].split(":")[0]
+                    //蒲公英局域网无法获取自身IP，只能通过这个处理自己的IP地址 /xx.xx.xx.xx:port
+                    val ip = with(socket.remoteSocketAddress.toString()) {
+                        if (this.contains("/"))
+                            this.split("/")[0].split(":")[0]
+                        else
+                            this
                     }
                     val imageUri: Uri
                     //有头像的联系人不用请求头像
                     imageUri = if (MyData.savedContact.containsKey(name)
                         && MyData.savedContact[name] != ""
-                    ){
+                    ) {
                         send.println("NO")
                         Uri.parse(MyData.savedContact[name])
                     } else {
@@ -88,18 +98,23 @@ class LocalNet {
                     }
                     //将建立过连接的主机添加到可访问主机中
                     addAddress(Contact(name, ip, imageUri.toString()))
-                    //更新UI
+                    //更新UI  TODO 统一更新，不要单条更新
                     val msg = Message()
                     msg.what = ContactListActivity.updateRecyclerView
-                    messenger.send(msg)
+                    contactListMessenger.send(msg)
                 }
-                "message" -> {        //发送一条消息
+                "message" -> {        //接收发送过来的消息
                     val name = get.readLine()
                     val content = get.readLine()
-                    val imageUri = Uri.parse("")
-                    if (!MyData.tempMsgMap.containsKey(name))
-                        MyData.tempMsgMap[name] = ArrayList()
-                    MyData.tempMsgMap[name]?.add(Msg(content, Msg.TYPE_RECEIVED, imageUri))
+                    with(TimeMsg(name, Msg.TYPE_RECEIVED, content)) {
+                        //添加到待展示的数据中
+                        MyData.getTempMsgList(name).add(this)
+                        //更新到数据库中去
+                        DBUtil.DB.execSQL(
+                            "insert into msg values(?,?,?,?,?)",
+                            arrayOf(MyData.username, contactName, type, content, date)
+                        )
+                    }
                 }
                 else -> send.println(string)
             }
@@ -108,7 +123,7 @@ class LocalNet {
     }
 
     //创建服务器，接收客户端的连接请求
-    fun startServer(messenger: Messenger) {  //接收发来的消息
+    fun startServer(contactListMessenger: Messenger) {  //接收发来的消息
         thread {
             var out = false
             try {
@@ -125,7 +140,7 @@ class LocalNet {
                     try {
                         socket = serverSocket.accept()
                         LogUtil.d(tag, "服务器收到一个连接，启动新线程${count}")
-                        ServerThread(socket, messenger, count++).start()
+                        ServerThread(socket, contactListMessenger, count++).start()
                     } catch (e: Exception) {
                         LogUtil.d(tag, "服务器有异常")
                         e.printStackTrace()
@@ -140,7 +155,7 @@ class LocalNet {
     }
 
     //在局域网中发起连接请求，搜索其他用户
-    fun searchLocal(messenger: Messenger) {
+    fun searchLocal(contactListMessenger: Messenger) {
         MyData.accessContact.clear()    //清空已保存其他用户的数据
         var address = getIp()       //获取本机IP
         address = "172.16.0.0"      //TODO 蒲公英组网时所用，最后应删去
@@ -217,7 +232,7 @@ class LocalNet {
             //更新UI
             val msg = Message()
             msg.what = ContactListActivity.updateRecyclerView
-            messenger.send(msg)
+            contactListMessenger.send(msg)
         }
     }
 
@@ -284,25 +299,45 @@ class LocalNet {
     }
 
     //在局域网中发送消息
-    fun sendMessage(name: String, message: String, ip: String = "0.0.0.0") {
+    fun sendMessage(message: String, contactName: String, ip: String) {
         thread {
             var socket: Socket? = null
             var send: PrintWriter? = null
-            var get: BufferedReader? = null
             try {
                 socket = Socket(ip, port)
-                get = BufferedReader(InputStreamReader(socket.getInputStream()))
                 send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
                 send.println("message")
-                send.println(name)
+                send.println(MyData.username)
                 send.println(message)
                 send.println("END")
+                //更新到数据库中去
+                DBUtil.DB.execSQL(
+                    "insert into msg values(?,?,?,?,?)",
+                    arrayOf(MyData.username, contactName, Msg.TYPE_SENT, message, TimeMsg.getDate())
+                )
             } catch (e: IOException) {
                 e.printStackTrace()
             } finally {
                 send?.close()
-                get?.close()
                 socket?.close()
+            }
+        }
+    }
+
+    //接收到消息更新到ContactActivity
+    fun updateTempMsg(contactMessenger: Messenger) {
+        val tempMsgMapName = MyData.tempMsgMapName
+        MyApplication.scope.launch(Dispatchers.IO) {
+            while (true) {
+                if (MyData.tempMsgMapName != "" && MyData.getTempMsgList(MyData.tempMsgMapName).size > 0) {
+                    //更新contact UI
+                    val msg = Message()
+                    msg.what = ContactListActivity.updateRecyclerView
+                    contactMessenger.send(msg)
+                }
+                delay(300)
+                if (tempMsgMapName != MyData.tempMsgMapName)
+                    break
             }
         }
     }

@@ -12,7 +12,7 @@ import kotlinx.android.synthetic.main.msg_left_item.view.*
 import kotlinx.android.synthetic.main.msg_right_item.view.*
 import java.lang.IllegalArgumentException
 
-class MsgAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class ContactAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     inner class LeftViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val msgLeft: TextView = view.msgLeft
         val msgLeftImage: ImageView = view.msgLeftImage

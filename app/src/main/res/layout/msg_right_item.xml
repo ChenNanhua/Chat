@@ -6,9 +6,9 @@
 
     <ImageView
         android:id="@+id/msgRightImage"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_margin="6dp"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:layout_margin="3dp"
         android:contentDescription="@string/avatar"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
