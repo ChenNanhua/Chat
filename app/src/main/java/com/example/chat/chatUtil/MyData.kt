@@ -17,7 +17,7 @@ object MyData {
 
     //保存聊天消息
     private val msgMap = HashMap<String, ArrayList<Msg>>()
-    val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()
+    private val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()
     var tempMsgMapName = ""
     //保存所有打开对应port的用户IP,Uri
     @Volatile

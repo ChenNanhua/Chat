@@ -7,6 +7,7 @@ import android.os.*
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.ImageUtil
+import com.example.chat.chatUtil.LocalNetUtil
 import com.example.chat.chatUtil.LogUtil
 import com.example.chat.chatUtil.MyData
 import com.example.chat.data.Contact
@@ -18,7 +19,6 @@ import kotlin.collections.ArrayList
 class ContactActivity : MyActivity(), View.OnClickListener {
     private var adapter: ContactAdapter? = null
     private lateinit var imageUri: Uri          //聊天对象的头像信息
-    private val localNet = LocalNet()           //局域网通信
     private lateinit var contact: Contact       //聊天对象的信息
     private lateinit var msgList: ArrayList<Msg> //聊天对象的历史聊天记录
     private lateinit var tempMsgList: ArrayList<TimeMsg>
@@ -82,10 +82,8 @@ class ContactActivity : MyActivity(), View.OnClickListener {
         contactTitle.text = contact.name
 
         //后台更新聊天记录
-        with(LocalNet()) {
-            MyData.tempMsgMapName = contact.name
-            this.updateTempMsg(contactMessenger)
-        }
+        MyData.tempMsgMapName = contact.name
+        LocalNetUtil.updateTempMsg(contactMessenger)
     }
 
     override fun onDestroy() {
@@ -106,7 +104,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                     adapter?.notifyItemInserted(msgList.size - 1)
                     //将RecyclerView定位到最后一行
                     contactRecycleView.scrollToPosition(msgList.size - 1)
-                    localNet.sendMessage(content, contact.name, contact.IP)
+                    LocalNetUtil.sendMessage(content, contact.name, contact.IP)
                 }
             }
             choseImage -> {     //打开相册,选择要发送的的图片
@@ -124,7 +122,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
             2 -> {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     data.data?.let {
-                        localNet.sendSingleImage(it, contact.name, contact.IP)
+                        LocalNetUtil.sendSingleImage(it, contact.name, contact.IP)
                         LogUtil.d(tag, "选取的照片Uri:$it")
                         msgList.add(Msg(it.toString(), Msg.TYPE_IMAGE_SENT, MyData.myImageUri))
                         LogUtil.d(tag, "发送消息图片：$it")

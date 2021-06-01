@@ -1,4 +1,4 @@
-package com.example.chat
+package com.example.chat.chatUtil
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -8,6 +8,8 @@ import android.os.Message
 import android.os.Messenger
 import android.widget.Toast
 import androidx.core.content.ContextCompat.getSystemService
+import com.example.chat.ContactListActivity
+import com.example.chat.MyApplication
 import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
@@ -18,16 +20,12 @@ import java.io.*
 import java.net.*
 import kotlin.concurrent.thread
 
-class LocalNet {
-    private val tag = "LocalNet"
-    private val port = 8080
-
-    companion object Instance {
-        lateinit var serverSocket: ServerSocket
-    }
-
+object LocalNetUtil {
+    private const val tag = "LocalNet"
+    private const val port = 8080
+    lateinit var serverSocket: ServerSocket
     //服务器处理线程
-    inner class ServerThread(
+    class ServerThread(
         private val socket: Socket,
         private val contactListMessenger: Messenger,
         private val count: Int = 0
@@ -375,9 +373,9 @@ class LocalNet {
 
     //接收到消息更新到ContactActivity
     fun updateTempMsg(contactMessenger: Messenger) {
-        val tempMsgMapName = MyData.tempMsgMapName
         MyApplication.scope.launch(Dispatchers.IO) {
-            while (true) {
+            val tempMsgMapName = MyData.tempMsgMapName
+            while (true) {      //判断对应聊天对象是否有消息发送过来
                 if (MyData.tempMsgMapName != "" && MyData.getTempMsgList(MyData.tempMsgMapName).size > 0) {
                     //更新contact UI
                     val msg = Message()
