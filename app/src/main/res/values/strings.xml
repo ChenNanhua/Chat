@@ -20,11 +20,12 @@
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
     <string name="avatar">头像</string>
-    <string name="send">send</string>
+    <string name="clear">清除聊天记录</string>
     <string name="get">get</string>
     <string name="setAvatar">设置头像</string>
-    <string name="search_IP">searchIP</string>
-    <string name="image">图片</string>
+    <string name="search_IP">搜索局域网</string>
+    <string name="image">image</string>
+    <string name="send">send</string>
     <string name="inputSomething">输入…</string>
     <string name="contactTest">contactTest</string>
     <string name="startService">startService</string>

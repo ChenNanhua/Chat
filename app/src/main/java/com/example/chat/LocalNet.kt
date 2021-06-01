@@ -76,10 +76,10 @@ class LocalNet {
                         }
                     //获取对方信息
                     val name = get.readLine()
-                    //蒲公英局域网无法获取自身IP，只能通过这个处理自己的IP地址 /xx.xx.xx.xx:port
+                    //服务器获取的远程IP地址形式 /xx.xx.xx.xx:port
                     val ip = with(socket.remoteSocketAddress.toString()) {
-                        if (this.contains("/"))
-                            this.split("/")[0].split(":")[0]
+                        if (this.contains("/") && this.contains(":"))
+                            this.split("/")[1].split(":")[0]
                         else
                             this
                     }
@@ -98,7 +98,7 @@ class LocalNet {
                     }
                     //将建立过连接的主机添加到可访问主机中
                     addAddress(Contact(name, ip, imageUri.toString()))
-                    //更新UI  TODO 统一更新，不要单条更新
+                    //更新UI
                     val msg = Message()
                     msg.what = ContactListActivity.updateRecyclerView
                     contactListMessenger.send(msg)
@@ -114,6 +114,20 @@ class LocalNet {
                             "insert into msg values(?,?,?,?,?)",
                             arrayOf(MyData.username, contactName, type, content, date)
                         )
+                    }
+                }
+                "image" -> {
+                    val name = get.readLine()
+                    with(getImage(socket)) {
+                        with(TimeMsg(name, Msg.TYPE_IMAGE_RECEIVED, this.toString())) {
+                            //添加到待展示的数据中
+                            MyData.getTempMsgList(name).add(this)
+                            //更新到数据库中去
+                            DBUtil.DB.execSQL(
+                                "insert into msg values(?,?,?,?,?)",
+                                arrayOf(MyData.username, contactName, type, content, date)
+                            )
+                        }
                     }
                 }
                 else -> send.println(string)
@@ -156,72 +170,70 @@ class LocalNet {
 
     //在局域网中发起连接请求，搜索其他用户
     fun searchLocal(contactListMessenger: Messenger) {
-        MyData.accessContact.clear()    //清空已保存其他用户的数据
         var address = getIp()       //获取本机IP
         address = "172.16.0.0"      //TODO 蒲公英组网时所用，最后应删去
         LogUtil.d(tag, "客户端正在搜寻,客户端IP: $address")
-        val addressList: MutableList<String> = address.split(".").toMutableList()
-        thread {
-            //发送连接请求
-            MyApplication.scope.launch(Dispatchers.IO) {
-                //遍历局域网所有主机
-                for (i in 1..254) {     //通过遍历IP地址最后一段，遍历局域网所有主机
-                    addressList[addressList.size - 1] = i.toString()
-                    val tempIP = addressList.joinToString(".")
-                    //排除本机IP和模拟器下的回环地址
-                    if (tempIP != "10.0.2.17" && tempIP != "10.0.2.15") {
-                        launch {
-                            withContext(Dispatchers.IO) {
-                                var socket: Socket? = null
-                                var send: PrintWriter? = null
-                                var get: BufferedReader? = null
-                                try {
-                                    socket = Socket()
-                                    socket.connect(InetSocketAddress(tempIP, port), 200)   //尝试与主机建立联系
-                                    get = BufferedReader(InputStreamReader(socket.getInputStream()))
-                                    send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                                    //与其他用户交换信息
-                                    LogUtil.d(tag, "与其他用户交换信息: $tempIP")
-                                    send.println("yourInfo")    //发送获取主机信息的信号
-                                    val name = get.readLine()
-                                    val imageUri: Uri
-                                    //有头像的联系人不用请求头像
-                                    imageUri = if (MyData.savedContact.containsKey(name)
-                                        && MyData.savedContact[name] != ""
-                                    ) {
-                                        send.println("NO")
-                                        Uri.parse(MyData.savedContact[name])
-                                    } else {
-                                        send.println("YES")
-                                        if (get.readLine() == "NO")
-                                            Uri.parse("")
-                                        else getImage(socket, name)
-                                    }
-                                    //将建立过连接的主机添加到可访问主机中
-                                    addAddress(Contact(name, tempIP, imageUri.toString()))
-                                    //发送自身信息
-                                    send.println(MyData.username)
-                                    if (get.readLine() == "YES")
-                                        if (MyData.myImageUri.toString() == "")
-                                            send.println("NO")
-                                        else {
-                                            send.println("YES")
-                                            sendImage(socket, MyData.myImageUri)
-                                        }
-                                    //发送断开连接信号
-                                    send.println("END")
-                                } catch (e: SocketTimeoutException) {
-                                    //LogUtil.e(tag, e.message.toString())
-                                } catch (e: ConnectException) {
-                                    //e.printStackTrace()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    LogUtil.e(tag, "访问IP出现错误：$tempIP $e")
-                                } finally {
-                                    get?.close()
-                                    send?.close()
-                                    socket?.close()
+        MyApplication.scope.launch(Dispatchers.IO) {
+            MyData.accessContact.clear()    //清空已保存其他用户的数据
+            val addressList: MutableList<String> = address.split(".").toMutableList()
+            //遍历局域网所有主机,发送连接请求
+            for (i in 1..254) {     //通过遍历IP地址最后一段，遍历局域网所有主机
+                addressList[addressList.size - 1] = i.toString()
+                val tempIP = addressList.joinToString(".")
+                //排除本机IP和模拟器下的回环地址
+                if (tempIP != "10.0.2.17" && tempIP != "10.0.2.15") {
+                    launch {
+                        withContext(Dispatchers.IO) {
+                            //LogUtil.d(tag, tempIP)
+                            var socket: Socket? = null
+                            var send: PrintWriter? = null
+                            var get: BufferedReader? = null
+                            try {
+                                socket = Socket()
+                                socket.connect(InetSocketAddress(tempIP, port), 200)   //尝试与主机建立联系
+                                get = BufferedReader(InputStreamReader(socket.getInputStream()))
+                                send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+                                //与其他用户交换信息
+                                LogUtil.d(tag, "与其他用户交换信息: $tempIP")
+                                send.println("yourInfo")    //发送获取主机信息的信号
+                                val name = get.readLine()
+                                val imageUri: Uri
+                                //有头像的联系人不用请求头像
+                                imageUri = if (MyData.savedContact.containsKey(name)
+                                    && MyData.savedContact[name] != ""
+                                ) {
+                                    send.println("NO")
+                                    Uri.parse(MyData.savedContact[name])
+                                } else {
+                                    send.println("YES")
+                                    if (get.readLine() == "NO")
+                                        Uri.parse("")
+                                    else getImage(socket, name)
                                 }
+                                //将建立过连接的主机添加到可访问主机中
+                                addAddress(Contact(name, tempIP, imageUri.toString()))
+                                //发送自身信息
+                                send.println(MyData.username)
+                                if (get.readLine() == "YES")
+                                    if (MyData.myImageUri.toString() == "")
+                                        send.println("NO")
+                                    else {
+                                        send.println("YES")
+                                        sendImage(socket, MyData.myImageUri)
+                                    }
+                                //发送断开连接信号
+                                send.println("END")
+                            } catch (e: SocketTimeoutException) {
+                                //LogUtil.e(tag, e.message.toString())
+                            } catch (e: ConnectException) {
+                                //e.printStackTrace()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                LogUtil.e(tag, "访问IP出现错误：$tempIP $e")
+                            } finally {
+                                get?.close()
+                                send?.close()
+                                socket?.close()
                             }
                         }
                     }
@@ -267,7 +279,7 @@ class LocalNet {
     }
 
     //客户端接收图片并保存
-    private fun getImage(socket: Socket, username: String): Uri {
+    private fun getImage(socket: Socket, username: String = ""): Uri {
         val dataInputStream = DataInputStream(socket.getInputStream())
         val isSend = dataInputStream.readInt()
         if (isSend == 0)
@@ -289,7 +301,8 @@ class LocalNet {
             val bitmapName = ImageUtil.getName()
             LogUtil.e(tag, "客户端接收到一张图片:$bitmapName,图片大小:  $totalLen,arr大小:  ${arr.size}")
             ImageUtil.saveBitmapToPicture(bitmap, bitmapName)?.run {
-                DBUtil.setAvatarContact(username, this, bitmapName)
+                if (username != "")
+                    DBUtil.setAvatarContact(username, this, bitmapName)
                 return this
             }
         } catch (e: Exception) {
@@ -300,7 +313,7 @@ class LocalNet {
 
     //在局域网中发送消息
     fun sendMessage(message: String, contactName: String, ip: String) {
-        thread {
+        MyApplication.scope.launch(Dispatchers.IO) {
             var socket: Socket? = null
             var send: PrintWriter? = null
             try {
@@ -322,6 +335,42 @@ class LocalNet {
                 socket?.close()
             }
         }
+    }
+
+    fun sendSingleImage(imageUri: Uri, contactName: String, ip: String) {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            var socket: Socket? = null
+            var send: PrintWriter? = null
+            try {
+                socket = Socket(ip, port)
+                send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+                send.println("image")
+                send.println(MyData.username)
+                sendImage(socket, imageUri)
+                send.println("END")
+                //更新到数据库中去
+                ImageUtil.getBitmapFromUri(imageUri)?.let { bitmap ->
+                    ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {
+                        DBUtil.DB.execSQL(
+                            "insert into msg values(?,?,?,?,?)",
+                            arrayOf(
+                                MyData.username,
+                                contactName,
+                                Msg.TYPE_IMAGE_SENT,
+                                it.toString(),
+                                TimeMsg.getDate()
+                            )
+                        )
+                    }
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            } finally {
+                send?.close()
+                socket?.close()
+            }
+        }
+
     }
 
     //接收到消息更新到ContactActivity

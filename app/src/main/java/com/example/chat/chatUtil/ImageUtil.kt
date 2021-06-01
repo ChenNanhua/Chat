@@ -1,6 +1,8 @@
 package com.example.chat.chatUtil
 
+import android.R.attr.data
 import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -8,9 +10,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import com.example.chat.MyApplication
-import java.io.FileDescriptor
 import java.io.InputStream
-import java.lang.Exception
 import java.util.*
 
 
@@ -81,7 +81,9 @@ object ImageUtil {
             MyApplication.context.contentResolver.openFileDescriptor(uri, "r").use {
                 return BitmapFactory.decodeFileDescriptor(it?.fileDescriptor)
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         return null
     }
 

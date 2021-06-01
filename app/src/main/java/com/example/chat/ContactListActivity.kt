@@ -13,11 +13,8 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
-import com.example.chat.data.Msg
-import com.example.chat.data.TimeMsg
 import kotlinx.android.synthetic.main.activity_contact_list.*
 import kotlin.collections.ArrayList
-import kotlin.concurrent.thread
 
 
 class ContactListActivity : MyActivity() {
@@ -65,23 +62,6 @@ class ContactListActivity : MyActivity() {
         //test()
     }
 
-    private fun test() {
-        thread {
-            for (i in 1..5) {
-                DBUtil.DB.execSQL(
-                    "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
-                    arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
-                        MyData.username, MyData.username, Msg.TYPE_RECEIVED, i.toString(), TimeMsg.getDate()
-                    )
-                )
-                Thread.sleep(2000)
-            }
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-    }
 
     //动态申请权限的回调方法
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
@@ -107,7 +87,7 @@ class ContactListActivity : MyActivity() {
                 intent.type = "image/*"
                 startActivityForResult(intent, 2)
             }
-            R.id.sendMessage -> {
+            R.id.clear -> {
                 DBUtil.DB.execSQL("delete from msg")
             }
             R.id.searchIP -> {//开启搜索局域网用户的服务
@@ -115,20 +95,7 @@ class ContactListActivity : MyActivity() {
                 serviceIntent.putExtra("contactListMessenger", contactListMessenger)
                 startService(serviceIntent)
             }
-            R.id.startMyService -> {    //各种调试
-                ImageUtil.getUri("641").let {
-                    ImageUtil.getBitmapFromUri(it)?.let { bitmap ->
-                        contactListToolbarImageView.setImageBitmap(bitmap)
-                    }
-                }
-            }
-            R.id.contactTest -> {
-                //打开聊天界面,传递联系人数据
-                val contact = Contact("test", "127.0.0.1", "")//拿到联系人数据
-                val intent = Intent(this, ContactActivity::class.java)
-                intent.putExtra("contact", contact)
-                startActivity(intent)
-            }
+            R.id.contactTest -> { }
         }
         return true
     }
@@ -162,7 +129,7 @@ class ContactListActivity : MyActivity() {
         LogUtil.d(tag, "更新联系人列表")
         contactList.clear()     //清空以往保存的联系人信息
         with(contactList) {
-            MyData.accessContact.forEach() {
+            MyData.accessContact.forEach {
                 add(it.value)
             }
         }

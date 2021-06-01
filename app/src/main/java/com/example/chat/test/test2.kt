@@ -1,5 +1,6 @@
 package com.example.chat.test
 
+import android.annotation.SuppressLint
 import com.example.chat.chatUtil.DBUtil
 import com.example.chat.chatUtil.MyData
 import com.example.chat.data.Msg
@@ -8,10 +9,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 fun main() {
-    for (i in 0 until 10)
-        println(i)
+    println(getDate())
 }
 
+@SuppressLint("SimpleDateFormat")
+fun getDate(): String {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss:sss").format(Date())
+}
 fun insert() {
     DBUtil.DB.execSQL(
         "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
