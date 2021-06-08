@@ -67,7 +67,7 @@ object MyData {
                                                 its.getString(1).toInt(),      //type
                                                 with(its.getString(1).toInt()){     //返回消息对应的图片Uri
                                                     if(this == Msg.TYPE_RECEIVED)
-                                                        Uri.parse(accessContact[it.getString(0)]!!.imageUriString)
+                                                        Uri.parse(accessContact[it.getString(0)]!!.avatarUri)
                                                     else
                                                         myImageUri
                                                 }

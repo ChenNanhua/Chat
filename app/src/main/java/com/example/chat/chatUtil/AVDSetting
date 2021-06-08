@@ -5,3 +5,6 @@ Date()函数，日期减去1900，月份减去1，其余不变
 
 //主线程耗时操作提示
 The application may be doing too much work on its main thread.
+
+虚拟机访问本机IP地址必须用本机的局域网地址
+本机局域网IP地址：125.216.247.37

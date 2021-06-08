@@ -1,58 +1,24 @@
 package com.example.chat.test
 
-import android.annotation.SuppressLint
-import com.example.chat.chatUtil.DBUtil
-import com.example.chat.chatUtil.MyData
-import com.example.chat.data.Msg
-import com.example.chat.data.TimeMsg
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.chat.data.Contact
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 fun main() {
-    println(getDate())
-}
+    val client  = OkHttpClient()
+    val request = Request.Builder().url("http://localhost:8080/android/info?name=charon&avatarUri=123").build()
+    val response = client.newCall(request).execute()
+    println(response.message)
+    println(response.code)
+    val result = response.body?.string()
+    println(result)
 
-@SuppressLint("SimpleDateFormat")
-fun getDate(): String {
-    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss:sss").format(Date())
-}
-fun insert() {
-    DBUtil.DB.execSQL(
-        "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
-        arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
-            "test", "test", Msg.TYPE_RECEIVED, "添加的测试", TimeMsg.getDate()
-        )
-    )
-    DBUtil.DB.execSQL(
-        "insert into msg(username,contactName,type,content,date) values (?,?,?,?,?)",
-        arrayOf(    //SimpleDateFormat("YYYY-MM-DD HH:MM:SS").format(Date())
-            "test", "test", Msg.TYPE_RECEIVED, "添加的测试1", TimeMsg.getDate()
-        )
-    )
-}
-
-fun select() {
-    DBUtil.DB.rawQuery("select * from msg", arrayOf()).use {
-        if (it.moveToFirst())
-            do {
-                println(it.getString(0))
-                println(it.getString(3))
-                println(it.getString(4))
-            } while (it.moveToNext())
-    }
-}
-
-fun select2() {
-    DBUtil.DB.rawQuery(
-        "select * from msg where date > ?",
-        arrayOf(SimpleDateFormat.getDateTimeInstance().format(Date(121, 4, 30, 8, 29, 0)))
-    ).use {
-        if (it.moveToFirst())
-            do {
-                println(it.getString(0))
-                println(it.getString(3))
-                println(it.getString(4))
-                println("/n")
-            } while (it.moveToNext())
+    val gson = Gson()
+    val type = object : TypeToken<List<Contact>>(){}.type
+    val contacts:List<Contact> = gson.fromJson(result,type)
+    for (contact in contacts){
+        println(contact)
     }
 }

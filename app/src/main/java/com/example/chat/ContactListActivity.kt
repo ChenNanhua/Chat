@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.*
 import android.view.Menu
 import android.view.MenuItem
@@ -14,7 +16,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import kotlinx.android.synthetic.main.activity_contact_list.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 
 
 class ContactListActivity : MyActivity() {
@@ -95,7 +100,26 @@ class ContactListActivity : MyActivity() {
                 serviceIntent.putExtra("contactListMessenger", contactListMessenger)
                 startService(serviceIntent)
             }
-            R.id.contactTest -> { }
+            R.id.logout->{
+                with(Intent(this,LoginActivity::class.java)){
+                    this.putExtra("NoAutoLogin","NoAutoLogin")
+                    startActivity(this)
+                    finish()
+                }
+            }
+            R.id.test -> {
+                thread {
+                    val client = OkHttpClient()
+                    val request =
+                        Request.Builder().url("http://125.216.247.37:8080/image/charon.jpg").build()
+                    val response = client.newCall(request).execute()
+                    val result = response.body?.bytes()!!
+                    val bitmap = BitmapFactory.decodeByteArray(result, 0, result.size)
+                    runOnUiThread{
+                        contactListToolbarImageView.setImageBitmap(bitmap)
+                    }
+                }
+            }
         }
         return true
     }

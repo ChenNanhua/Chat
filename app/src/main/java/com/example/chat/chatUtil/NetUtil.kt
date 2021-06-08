@@ -14,23 +14,25 @@ import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
+import com.google.gson.Gson
 import kotlinx.android.synthetic.main.activity_contact.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.*
 import kotlin.concurrent.thread
 
-object LocalNetUtil {
-    private const val tag = "LocalNet"
+object NetUtil {
+    private const val tag = "LocalNetg"
     private const val port = 8080
+    private val gson = Gson()
     lateinit var serverSocket: ServerSocket
+
     //服务器处理线程
     class ServerThread(
         private val socket: Socket,
         private val contactListMessenger: Messenger,
         private val count: Int = 0
-    ) :
-        Thread() {
+    ) : Thread() {
         private val tag = "LocalNetServerThread"
         private lateinit var get: BufferedReader
         private lateinit var send: PrintWriter
@@ -70,7 +72,7 @@ object LocalNetUtil {
                             send.println("NO")
                         else {
                             send.println("YES")
-                            sendImage(socket, MyData.myImageUri)
+                            sendImageLocal(socket, MyData.myImageUri)
                         }
                     //获取对方信息
                     val name = get.readLine()
@@ -92,7 +94,7 @@ object LocalNetUtil {
                         send.println("YES")
                         if (get.readLine() == "NO")
                             Uri.parse("")
-                        else getImage(socket, name)
+                        else getImageLocal(socket, name)
                     }
                     //将建立过连接的主机添加到可访问主机中
                     addAddress(Contact(name, ip, imageUri.toString()))
@@ -116,7 +118,7 @@ object LocalNetUtil {
                 }
                 "image" -> {
                     val name = get.readLine()
-                    with(getImage(socket)) {
+                    with(getImageLocal(socket)) {
                         with(TimeMsg(name, Msg.TYPE_IMAGE_RECEIVED, this.toString())) {
                             //添加到待展示的数据中
                             MyData.getTempMsgList(name).add(this)
@@ -134,8 +136,8 @@ object LocalNetUtil {
         }
     }
 
-    //创建服务器，接收客户端的连接请求
-    fun startServer(contactListMessenger: Messenger) {  //接收发来的消息
+    //局域网创建服务器，接收客户端的连接请求
+    fun startServerLocal(contactListMessenger: Messenger) {  //接收发来的消息
         thread {
             var out = false
             try {
@@ -206,7 +208,7 @@ object LocalNetUtil {
                                     send.println("YES")
                                     if (get.readLine() == "NO")
                                         Uri.parse("")
-                                    else getImage(socket, name)
+                                    else getImageLocal(socket, name)
                                 }
                                 //将建立过连接的主机添加到可访问主机中
                                 addAddress(Contact(name, tempIP, imageUri.toString()))
@@ -217,7 +219,7 @@ object LocalNetUtil {
                                         send.println("NO")
                                     else {
                                         send.println("YES")
-                                        sendImage(socket, MyData.myImageUri)
+                                        sendImageLocal(socket, MyData.myImageUri)
                                     }
                                 //发送断开连接信号
                                 send.println("END")
@@ -246,20 +248,21 @@ object LocalNetUtil {
         }
     }
 
-    //服务器端发送图片
-    fun sendImage(socket: Socket, uri: Uri) {
+    //局域网服务器端发送图片
+    fun sendImageLocal(socket: Socket, uri: Uri) {
         val dataOutputStream = DataOutputStream(socket.getOutputStream())
         val dataInputStream: DataInputStream
-        try {
-            //获取待发送的图片数据
+        try {   //获取待发送的图片数据
             dataInputStream = DataInputStream(ImageUtil.getInputStream(uri))
         } catch (e: Exception) {        //数据获取出错，发送错误消息，不发送照片
             e.printStackTrace()
-            LogUtil.d(tag, "服务器获取照片信息出错,imageName:$uri")
+            LogUtil.d(tag, "服务器获取待发送照片出错,imageName:$uri")
             dataOutputStream.writeInt(0)
+            LogUtil.e(tag, "服务器发送数据:0")
             return
         }
         dataOutputStream.writeInt(1)    //数据获取正常，发送照片数据
+        LogUtil.e(tag, "服务器发送数据:1")
         val byte = ByteArray(1024 * 10)
         var len: Int = dataInputStream.read(byte)    //计算每次读取的数据
         var totalLen = 0
@@ -276,10 +279,11 @@ object LocalNetUtil {
         LogUtil.e(tag, "服务器发送一张图片:$uri,图片大小:$totalLen")
     }
 
-    //客户端接收图片并保存
-    private fun getImage(socket: Socket, username: String = ""): Uri {
+    //局域网客户端接收图片并保存
+    private fun getImageLocal(socket: Socket, username: String = ""): Uri {
         val dataInputStream = DataInputStream(socket.getInputStream())
         val isSend = dataInputStream.readInt()
+        LogUtil.e(tag, "服务器接收到isSend:$isSend")
         if (isSend == 0)
             return Uri.parse("")
         val byte = ByteArray(1024 * 10)
@@ -310,7 +314,7 @@ object LocalNetUtil {
     }
 
     //在局域网中发送消息
-    fun sendMessage(message: String, contactName: String, ip: String) {
+    fun sendMessageLocal(message: String, contactName: String, ip: String) {
         MyApplication.scope.launch(Dispatchers.IO) {
             var socket: Socket? = null
             var send: PrintWriter? = null
@@ -335,7 +339,8 @@ object LocalNetUtil {
         }
     }
 
-    fun sendSingleImage(imageUri: Uri, contactName: String, ip: String) {
+    //局域网发送一张照片
+    fun sendSingleImageLocal(imageUri: Uri, contactName: String, ip: String) {
         MyApplication.scope.launch(Dispatchers.IO) {
             var socket: Socket? = null
             var send: PrintWriter? = null
@@ -344,8 +349,8 @@ object LocalNetUtil {
                 send = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
                 send.println("image")
                 send.println(MyData.username)
-                sendImage(socket, imageUri)
-                send.println("END")
+                sendImageLocal(socket, imageUri)
+                //send.println("END")
                 //更新到数据库中去
                 ImageUtil.getBitmapFromUri(imageUri)?.let { bitmap ->
                     ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {

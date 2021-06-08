@@ -10,7 +10,10 @@
         android:id="@+id/searchIP"
         android:title="@string/search_IP"/>
     <item
-        android:id="@+id/contactTest"
-        android:title="@string/contactTest"
-        android:visible="false"/>
+        android:id="@+id/logout"
+        android:title="@string/logout"/>
+    <item
+        android:id="@+id/test"
+        android:title="@string/test"
+        android:visible="true"/>
 </menu>

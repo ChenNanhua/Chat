@@ -42,10 +42,10 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         val contact = contactList[position]
         holder.contactName.text = contact.name
         holder.contactIP.text = contact.IP
-        if (contact.imageUriString == "")
+        if (contact.avatarUri == "")
             holder.contactImage.setImageResource(R.drawable.none)
         else {
-            holder.contactImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(contact.imageUriString)))
+            holder.contactImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(contact.avatarUri)))
         }
     }
 

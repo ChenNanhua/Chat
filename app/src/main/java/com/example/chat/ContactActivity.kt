@@ -7,7 +7,7 @@ import android.os.*
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.ImageUtil
-import com.example.chat.chatUtil.LocalNetUtil
+import com.example.chat.chatUtil.NetUtil
 import com.example.chat.chatUtil.LogUtil
 import com.example.chat.chatUtil.MyData
 import com.example.chat.data.Contact
@@ -59,7 +59,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
 
         //获取聊天对象contact信息
         contact = intent.getSerializableExtra("contact") as Contact
-        imageUri = Uri.parse(contact.imageUriString)
+        imageUri = Uri.parse(contact.avatarUri)
         LogUtil.d(tag, "聊天的对象: $contact")
 
         //聊天消息的获取
@@ -83,7 +83,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
 
         //后台更新聊天记录
         MyData.tempMsgMapName = contact.name
-        LocalNetUtil.updateTempMsg(contactMessenger)
+        NetUtil.updateTempMsg(contactMessenger)
     }
 
     override fun onDestroy() {
@@ -104,7 +104,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                     adapter?.notifyItemInserted(msgList.size - 1)
                     //将RecyclerView定位到最后一行
                     contactRecycleView.scrollToPosition(msgList.size - 1)
-                    LocalNetUtil.sendMessage(content, contact.name, contact.IP)
+                    NetUtil.sendMessageLocal(content, contact.name, contact.IP)
                 }
             }
             choseImage -> {     //打开相册,选择要发送的的图片
@@ -122,7 +122,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
             2 -> {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     data.data?.let {
-                        LocalNetUtil.sendSingleImage(it, contact.name, contact.IP)
+                        NetUtil.sendSingleImageLocal(it, contact.name, contact.IP)
                         LogUtil.d(tag, "选取的照片Uri:$it")
                         msgList.add(Msg(it.toString(), Msg.TYPE_IMAGE_SENT, MyData.myImageUri))
                         LogUtil.d(tag, "发送消息图片：$it")

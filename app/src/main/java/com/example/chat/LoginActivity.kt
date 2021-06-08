@@ -12,6 +12,8 @@ import com.example.chat.chatUtil.DBUtil.DB
 import com.example.chat.chatUtil.MyData
 import com.example.chat.chatUtil.HashUtil
 import kotlinx.android.synthetic.main.activity_login.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LoginActivity : MyActivity(), View.OnClickListener {
     private lateinit var sharedEdit: SharedPreferences.Editor        //写入SharedPreferences
@@ -43,7 +45,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         }
         //判断是否自动登录
         val autoLoginName = shared.getString("autoLoginName", "")
-        if (autoLoginName != "" && autoLoginName == username) {
+        if (autoLoginName != "" && autoLoginName == username && intent.getStringExtra("NoAutoLogin") == null) {
             autoLogin.isChecked = true
             login(username)
             Toast.makeText(this, "自动登录成功...", Toast.LENGTH_SHORT).show()
@@ -116,6 +118,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
                 MyData.myImageUri = Uri.parse(uri)
             }
         }
-        startActivity(Intent(this, ContactListActivity::class.java))
+        startActivity(Intent(MyApplication.context, ContactListActivity::class.java))
+        finish()
     }
 }
