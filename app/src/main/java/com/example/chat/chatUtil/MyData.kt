@@ -13,13 +13,14 @@ object MyData {
 
     //个人信息
     var username = ""
-    var myImageUri: Uri = Uri.parse("")
+    var myAvatarUri: Uri = Uri.parse("")
 
-    //保存聊天消息
-    private val msgMap = HashMap<String, ArrayList<Msg>>()
-    private val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()
+    //聊天消息
+    private val msgMap = HashMap<String, ArrayList<Msg>>()  //保存所有聊天对象的历史聊天记录
+    private val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()  //保存新的、待展示到界面上的聊天记录
     var tempMsgMapName = ""
-    //保存所有打开对应port的用户IP,Uri
+
+    //保存查询到的所有打开对应port的用户IP,Uri
     @Volatile
     var accessContact: HashMap<String, Contact> = HashMap()
 
@@ -58,22 +59,27 @@ object MyData {
                             DB.rawQuery(    //获取联系人的聊天记录
                                 "select content,type from msg where username=? and contactName = ? order by date limit 0,50",
                                 arrayOf(username, it.getString(0))
-                            ).use { its ->
-                                if (its.moveToFirst()) {
+                            ).use { it2 ->
+                                if (it2.moveToFirst()) {
                                     do {
                                         msgMap[it.getString(0)]!!.add(
                                             Msg(
-                                                its.getString(0),   //content
-                                                its.getString(1).toInt(),      //type
-                                                with(its.getString(1).toInt()){     //返回消息对应的图片Uri
-                                                    if(this == Msg.TYPE_RECEIVED)
-                                                        Uri.parse(accessContact[it.getString(0)]!!.avatarUri)
-                                                    else
-                                                        myImageUri
+                                                it2.getString(0),   //content
+                                                it2.getString(1).toInt(),      //type
+                                                with(it2.getString(1).toInt()) {     //返回消息对应的图片Uri
+                                                    when (this) {   //根据不同的类型设置不同的头像uri
+                                                        Msg.TYPE_SENT -> myAvatarUri
+                                                        Msg.TYPE_IMAGE_SENT -> myAvatarUri
+                                                        Msg.TYPE_RECEIVED -> Uri.parse(accessContact[it.getString(0)]!!.avatarUri)
+                                                        Msg.TYPE_IMAGE_RECEIVED -> Uri.parse(
+                                                            accessContact[it.getString(0)]!!.avatarUri
+                                                        )
+                                                        else -> myAvatarUri
+                                                    }
                                                 }
                                             )
                                         )
-                                    } while (its.moveToNext())
+                                    } while (it2.moveToNext())
                                 }
                             }
                         }
@@ -84,19 +90,20 @@ object MyData {
         }
     }
 
-    private fun initTempTimeMsg(){
-        accessContact.forEach{(key)->
+    private fun initTempTimeMsg() {
+        accessContact.forEach { (key) ->
             getTempMsgList(key)
         }
     }
 
-    //从两个map总获取对应聊天对象的聊天记录
+    //获取聊天对象的历史聊天记录
     fun getMsgList(contactName: String): ArrayList<Msg> {
         if (!msgMap.containsKey(contactName))
             msgMap[contactName] = ArrayList()
         return msgMap[contactName]!!
     }
 
+    //保存待展示在界面上的聊天信息
     fun getTempMsgList(contactName: String): ArrayList<TimeMsg> {
         if (!tempTimeMsgMap.containsKey(contactName))
             tempTimeMsgMap[contactName] = ArrayList()

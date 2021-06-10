@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.chat.chatUtil.ImageUtil
 import com.example.chat.data.Contact
 import kotlinx.android.synthetic.main.contact_list_item.view.*
-
+//TODO 局域网测试一波即可完成局域网，commit
 class ContactListAdapter(private val contactList: List<Contact>) :
     RecyclerView.Adapter<ContactListAdapter.ViewHolder>() {
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {

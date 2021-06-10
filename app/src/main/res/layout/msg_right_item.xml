@@ -20,7 +20,7 @@
         app:layout_constraintRight_toLeftOf="@id/msgRightAvatar"
         app:layout_constraintTop_toTopOf="@id/msgRightAvatar"
         app:layout_constraintWidth_max="wrap"
-        app:layout_constraintWidth_percent="0.6">
+        app:layout_constraintWidth_percent="0.7">
 
         <TextView
             android:id="@+id/msgRightText"

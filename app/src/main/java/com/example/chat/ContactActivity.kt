@@ -18,7 +18,7 @@ import kotlin.collections.ArrayList
 
 class ContactActivity : MyActivity(), View.OnClickListener {
     private var adapter: ContactAdapter? = null
-    private lateinit var imageUri: Uri          //聊天对象的头像信息
+    private lateinit var contactAvatarUri: Uri          //聊天对象的头像信息
     private lateinit var contact: Contact       //聊天对象的信息
     private lateinit var msgList: ArrayList<Msg> //聊天对象的历史聊天记录
     private lateinit var tempMsgList: ArrayList<TimeMsg>
@@ -38,9 +38,17 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                         //依次取出消息显示在屏幕上
                         for (i in 0 until tempMsgList.size) {
                             with(tempMsgList[i]) {
-                                msgList.add(Msg(this.content, this.type, imageUri))
+                                when (this.type) {
+                                    Msg.TYPE_SENT -> msgList.add(Msg(this.content, this.type, MyData.myAvatarUri))
+                                    Msg.TYPE_RECEIVED -> msgList.add(Msg(this.content, this.type, contactAvatarUri))
+                                    Msg.TYPE_IMAGE_RECEIVED -> msgList.add(
+                                        Msg(this.content, this.type, contactAvatarUri)
+                                    )
+                                    Msg.TYPE_IMAGE_SENT -> msgList.add(Msg(this.content, this.type, MyData.myAvatarUri))
+                                }
                                 removeTempMsgList.add(this)
                             }
+                            //刷新新的一行
                             adapter?.notifyItemInserted(msgList.size - 1)
                             //将RecyclerView定位到最后一行
                             contactRecycleView.scrollToPosition(msgList.size - 1)
@@ -59,7 +67,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
 
         //获取聊天对象contact信息
         contact = intent.getSerializableExtra("contact") as Contact
-        imageUri = Uri.parse(contact.avatarUri)
+        contactAvatarUri = Uri.parse(contact.avatarUri)
         LogUtil.d(tag, "聊天的对象: $contact")
 
         //聊天消息的获取
@@ -76,7 +84,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
         choseImage.setOnClickListener(this)
 
         //toolbar设置头像和名字
-        ImageUtil.getBitmapFromUri(imageUri)?.let {
+        ImageUtil.getBitmapFromUri(contactAvatarUri)?.let {
             contactToolbarImageView.setImageBitmap(it)
         }
         contactTitle.text = contact.name
@@ -98,7 +106,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                 val content = inputText.text.toString()
                 inputText.setText("")
                 if (content.isNotEmpty()) {
-                    msgList.add(Msg(content, Msg.TYPE_SENT, MyData.myImageUri))
+                    msgList.add(Msg(content, Msg.TYPE_SENT, MyData.myAvatarUri))
                     LogUtil.d(tag, "发送消息：$content")
                     //有新消息时刷新RecyclerView中的显示
                     adapter?.notifyItemInserted(msgList.size - 1)
@@ -122,14 +130,8 @@ class ContactActivity : MyActivity(), View.OnClickListener {
             2 -> {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     data.data?.let {
-                        NetUtil.sendSingleImageLocal(it, contact.name, contact.IP)
+                        NetUtil.sendSingleImageLocal(it, contact.name, contact.IP, contactMessenger)
                         LogUtil.d(tag, "选取的照片Uri:$it")
-                        msgList.add(Msg(it.toString(), Msg.TYPE_IMAGE_SENT, MyData.myImageUri))
-                        LogUtil.d(tag, "发送消息图片：$it")
-                        //有新消息时刷新RecyclerView中的显示
-                        adapter?.notifyItemInserted(msgList.size - 1)
-                        //将RecyclerView定位到最后一行
-                        contactRecycleView.scrollToPosition(msgList.size - 1)
                     }
                 }
             }

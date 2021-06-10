@@ -13,7 +13,7 @@ object DBUtil {
             "update user set avatarUri = ?,avatarName=? where username = ?",
             arrayOf(avatarUri.toString(), avatarName, username)
         )
-        MyData.myImageUri = avatarUri
+        MyData.myAvatarUri = avatarUri
     }
 
     //更新数据库中的联系人信息

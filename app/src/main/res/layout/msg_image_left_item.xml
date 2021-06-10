@@ -14,16 +14,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
 
-        <ImageView
-            android:id="@+id/msgLeftImage"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/image"
-            android:gravity="start"
-            android:padding="5dp"
-            app:layout_constraintLeft_toRightOf="@id/msgLeftAvatar"
-            app:layout_constraintTop_toTopOf="@id/msgLeftAvatar"
-            app:layout_constraintWidth_max="wrap"
-            app:layout_constraintWidth_percent="0.6"
-            app:layout_constraintHeight_max="600dp" />
+    <ImageView
+        android:id="@+id/msgLeftImage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/image"
+        android:gravity="start"
+        android:padding="5dp"
+        app:layout_constraintLeft_toRightOf="@id/msgLeftAvatar"
+        app:layout_constraintTop_toTopOf="@id/msgLeftAvatar"
+        app:layout_constraintWidth_max="wrap"
+        app:layout_constraintWidth_percent="0.7" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -12,8 +12,6 @@ import com.example.chat.chatUtil.DBUtil.DB
 import com.example.chat.chatUtil.MyData
 import com.example.chat.chatUtil.HashUtil
 import kotlinx.android.synthetic.main.activity_login.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class LoginActivity : MyActivity(), View.OnClickListener {
     private lateinit var sharedEdit: SharedPreferences.Editor        //写入SharedPreferences
@@ -115,7 +113,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         DB.rawQuery("select avatarUri from user where username = ?", arrayOf(username)).use {
             if (it.moveToFirst()) {
                 val uri = it.getString(0)
-                MyData.myImageUri = Uri.parse(uri)
+                MyData.myAvatarUri = Uri.parse(uri)
             }
         }
         startActivity(Intent(MyApplication.context, ContactListActivity::class.java))

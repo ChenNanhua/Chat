@@ -70,32 +70,29 @@ class ContactAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<Recy
         when (holder) {
             is LeftViewHolder -> {
                 holder.msgLeftText.text = msg.content
-                if (msg.imageUri.toString() != "") {
-                    holder.msgLeftAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.imageUri))
+                if (msg.avatarUri.toString() != "") {
+                    holder.msgLeftAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.avatarUri))
                 } else
                     holder.msgLeftAvatar.setImageResource(R.drawable.none)
             }
             is RightViewHolder -> {
                 holder.msgRightText.text = msg.content
-                if (msg.imageUri.toString() != "") {
-                    holder.msgRightAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.imageUri))
+                if (msg.avatarUri.toString() != "") {
+                    holder.msgRightAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.avatarUri))
                 } else
                     holder.msgRightAvatar.setImageResource(R.drawable.none)
             }
             is LeftImageViewHolder -> {
                 holder.msgLeftImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(msg.content)))
-                if (msg.imageUri.toString() != "") {
-                    holder.msgLeftAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.imageUri))
+                if (msg.avatarUri.toString() != "") {
+                    holder.msgLeftAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.avatarUri))
                 } else
                     holder.msgLeftAvatar.setImageResource(R.drawable.none)
             }
             is RightImageViewHolder -> {
-                val tag = "important"
-                LogUtil.e(tag,msg.content)
-                LogUtil.e(tag,Uri.parse(msg.content).toString())
                 holder.msgRightImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(msg.content)))
-                if (msg.imageUri.toString() != "") {
-                    holder.msgRightAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.imageUri))
+                if (msg.avatarUri.toString() != "") {
+                    holder.msgRightAvatar.setImageBitmap(ImageUtil.getBitmapFromUri(msg.avatarUri))
                 } else
                     holder.msgRightAvatar.setImageResource(R.drawable.none)
             }

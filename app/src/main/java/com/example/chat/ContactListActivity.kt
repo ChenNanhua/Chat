@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.*
 import android.view.Menu
@@ -47,9 +46,10 @@ class ContactListActivity : MyActivity() {
         setContentView(R.layout.activity_contact_list)
         setSupportActionBar(contactToolbar)
         //toolbar设置头像
-        ImageUtil.getBitmapFromUri(MyData.myImageUri)?.let {
-            contactListToolbarImageView.setImageBitmap(it)
-        }
+        if (MyData.myAvatarUri.toString() != "")
+            ImageUtil.getBitmapFromUri(MyData.myAvatarUri)?.let {
+                contactListToolbarImageView.setImageBitmap(it)
+            }
         //初始化已保存的联系人列表
         MyData.initSavedContact()
         //动态申请权限
@@ -100,9 +100,9 @@ class ContactListActivity : MyActivity() {
                 serviceIntent.putExtra("contactListMessenger", contactListMessenger)
                 startService(serviceIntent)
             }
-            R.id.logout->{
-                with(Intent(this,LoginActivity::class.java)){
-                    this.putExtra("NoAutoLogin","NoAutoLogin")
+            R.id.logout -> {
+                with(Intent(this, LoginActivity::class.java)) {
+                    this.putExtra("NoAutoLogin", "NoAutoLogin")
                     startActivity(this)
                     finish()
                 }
@@ -115,7 +115,7 @@ class ContactListActivity : MyActivity() {
                     val response = client.newCall(request).execute()
                     val result = response.body?.bytes()!!
                     val bitmap = BitmapFactory.decodeByteArray(result, 0, result.size)
-                    runOnUiThread{
+                    runOnUiThread {
                         contactListToolbarImageView.setImageBitmap(bitmap)
                     }
                 }
