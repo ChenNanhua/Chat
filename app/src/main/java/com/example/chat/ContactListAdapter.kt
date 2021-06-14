@@ -13,13 +13,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.chat.chatUtil.ImageUtil
 import com.example.chat.data.Contact
 import kotlinx.android.synthetic.main.contact_list_item.view.*
-//TODO 局域网测试一波即可完成局域网，commit
+
 class ContactListAdapter(private val contactList: List<Contact>) :
     RecyclerView.Adapter<ContactListAdapter.ViewHolder>() {
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val contactImage: ImageView = view.contactImage
+        val contactImage: ImageView = view.contactAvatar
         val contactName: TextView = view.contactName
         val contactIP: TextView = view.contactIP
+        val contactOnline: TextView = view.contactOnline
+        val contactAddress: TextView = view.contactAddress
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -32,7 +34,7 @@ class ContactListAdapter(private val contactList: List<Contact>) :
             val contact = contactList[position] //拿到联系人数据
             val intent =
                 Intent(MyApplication.context, ContactActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.putExtra("contact",contact)
+            intent.putExtra("contact", contact)
             startActivity(MyApplication.context, intent, null)
         }
         return viewHolder
@@ -42,11 +44,21 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         val contact = contactList[position]
         holder.contactName.text = contact.name
         holder.contactIP.text = contact.IP
-        if (contact.avatarUri == "")
+        if (contact.avatarUri == "")    //设置头像
             holder.contactImage.setImageResource(R.drawable.none)
-        else {
+        else
             holder.contactImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(contact.avatarUri)))
+        if (contact.isOnline){          //设置是否在线
+            holder.contactOnline.text = MyApplication.context.resources.getText(R.string.online)
+            holder.contactOnline.setTextColor(MyApplication.context.resources.getColor(R.color.green))
+        }else{
+            holder.contactOnline.text = MyApplication.context.resources.getText(R.string.offline)
+            holder.contactOnline.setTextColor(MyApplication.context.resources.getColor(R.color.red))
         }
+        if (contact.isLocal)            //设置地址
+            holder.contactAddress.text = MyApplication.context.resources.getText(R.string.local)
+        else
+            holder.contactAddress.text = MyApplication.context.resources.getText(R.string.internet)
     }
 
     override fun getItemCount(): Int = contactList.size

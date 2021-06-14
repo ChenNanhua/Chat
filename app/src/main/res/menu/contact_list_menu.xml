@@ -8,7 +8,7 @@
         android:title="@string/clear"/>
     <item
         android:id="@+id/searchIP"
-        android:title="@string/search_IP"/>
+        android:title="@string/search_contact"/>
     <item
         android:id="@+id/logout"
         android:title="@string/logout"/>

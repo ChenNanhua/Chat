@@ -15,8 +15,12 @@ import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.android.synthetic.main.activity_contact.*
 import kotlinx.coroutines.*
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.*
 import java.net.*
 import kotlin.concurrent.thread
@@ -30,6 +34,8 @@ object NetUtil {
     private const val port = 8090
     private val gson = Gson()
     lateinit var serverSocket: ServerSocket
+    private const val urlHead = "http://121.40.239.98:8080/"     //TODO 修改为真实IP地址 本地地址125.216.247.37 服务器地址121.40.239.98
+    private var isGetMessageInternet = false    //判断是否已经开启了接收服务器消息
 
     //服务器处理线程
     class ServerThread(
@@ -93,10 +99,10 @@ object NetUtil {
                     val avatarUri: Uri
                     //有头像的联系人不用请求头像
                     avatarUri = if (MyData.savedContact.containsKey(name)
-                        && MyData.savedContact[name] != ""
+                        && MyData.savedContact[name]!!.avatarUri != ""
                     ) {
                         send.writeUTF("NO")
-                        Uri.parse(MyData.savedContact[name])
+                        Uri.parse(MyData.savedContact[name]!!.avatarUri)
                     } else {
                         send.writeUTF("YES")
                         if (get.readUTF() == "NO")
@@ -104,7 +110,9 @@ object NetUtil {
                         else getImageLocal(socket, name)
                     }
                     //将建立过连接的主机添加到可访问主机中
-                    addAddress(Contact(name, ip, avatarUri.toString()))
+                    addContact(Contact(name, ip, avatarUri.toString()))
+                    if (avatarUri.toString() == "")   //没有头像也要添加到历史联系人数据库
+                        DBUtil.setAvatarContact(name, avatarUri.toString())
                     //更新UI
                     val msg = Message()
                     msg.what = ContactListActivity.updateRecyclerView
@@ -158,7 +166,7 @@ object NetUtil {
 
     //局域网创建服务器，接收客户端的连接请求
     fun startServerLocal(contactListMessenger: Messenger) {  //接收发来的消息
-        thread {
+        MyApplication.scope.launch(Dispatchers.IO) {
             try {
                 serverSocket = ServerSocket(port)
                 lateinit var socket: Socket
@@ -189,69 +197,73 @@ object NetUtil {
         myIP = "172.16.0.1"      //TODO 蒲公英组网时所用，最后应删去
         LogUtil.d(tag, "客户端正在搜寻,客户端IP: $myIP")
         MyApplication.scope.launch(Dispatchers.IO) {
-            MyData.accessContact.clear()    //清空已保存其他用户的数据
-            val addressList: MutableList<String> = myIP.split(".").toMutableList()
-            //遍历局域网所有主机,发送连接请求
-            for (i in 1..254) {     //通过遍历IP地址最后一段，遍历局域网所有主机
-                addressList[addressList.size - 1] = i.toString()
-                val tempIP = addressList.joinToString(".")
-                //LogUtil.d(tag,tempIP)
-                //排除本机IP和模拟器下的回环地址
-                if (tempIP != myIP && tempIP != "10.0.2.17" && tempIP != "10.0.2.15") {
-                    launch {
-                        withContext(Dispatchers.IO) {
-                            var socket: Socket? = null
-                            try {
-                                socket = Socket()
-                                socket.connect(InetSocketAddress(tempIP, port), 200)   //尝试与主机建立联系
-                                //成功连接上其他用户，与其他用户交换信息
-                                LogUtil.d(tag, "与其他用户交换信息: $tempIP")
-                                val get = DataInputStream(socket.getInputStream())
-                                val send = DataOutputStream(socket.getOutputStream())
-                                send.writeUTF("yourInfo")    //发送获取主机信息的信号
-                                val name = get.readUTF()
-                                val imageUri: Uri
-                                //有头像的联系人不用请求头像
-                                imageUri = if (MyData.savedContact.containsKey(name)
-                                    && MyData.savedContact[name] != ""
-                                ) {
-                                    send.writeUTF("NO")
-                                    Uri.parse(MyData.savedContact[name])
-                                } else {
-                                    send.writeUTF("YES")
-                                    if (get.readUTF() == "NO")
-                                        Uri.parse("")
-                                    else getImageLocal(socket, name)
-                                }
-                                //将建立过连接的主机添加到可访问主机中
-                                addAddress(Contact(name, tempIP, imageUri.toString()))
-                                //发送自身信息
-                                send.writeUTF(MyData.username)
-                                if (get.readUTF() == "YES")
-                                    if (MyData.myAvatarUri.toString() == "")
+            withContext(Dispatchers.IO) {   //阻塞
+                MyData.onlineContact.clear()    //清空已保存其他用户的数据
+                val addressList: MutableList<String> = myIP.split(".").toMutableList()
+                //遍历局域网所有主机,发送连接请求
+                for (i in 1..254) {     //通过遍历IP地址最后一段，遍历局域网所有主机
+                    addressList[addressList.size - 1] = i.toString()
+                    val tempIP = addressList.joinToString(".")
+                    //LogUtil.d(tag, tempIP)
+                    //排除本机IP和模拟器下的回环地址
+                    if (tempIP != myIP && tempIP != "10.0.2.17" && tempIP != "10.0.2.15") {
+                        launch {
+                            withContext(Dispatchers.IO) {
+                                var socket: Socket? = null
+                                try {
+                                    socket = Socket()
+                                    socket.connect(InetSocketAddress(tempIP, port), 200)   //尝试与主机建立联系
+                                    //成功连接上其他用户，与其他用户交换信息
+                                    LogUtil.d(tag, "与其他用户交换信息: $tempIP")
+                                    val get = DataInputStream(socket.getInputStream())
+                                    val send = DataOutputStream(socket.getOutputStream())
+                                    send.writeUTF("yourInfo")    //发送获取主机信息的信号
+                                    val name = get.readUTF()
+                                    val avatarUri: Uri
+                                    //有头像的联系人不用请求头像
+                                    avatarUri = if (MyData.savedContact.containsKey(name)
+                                        && MyData.savedContact[name]!!.avatarUri != ""
+                                    ) {
                                         send.writeUTF("NO")
-                                    else {
+                                        Uri.parse(MyData.savedContact[name]!!.avatarUri)
+                                    } else {
                                         send.writeUTF("YES")
-                                        sendImageLocal(socket, MyData.myAvatarUri)
+                                        if (get.readUTF() == "NO")
+                                            Uri.parse("")
+                                        else getImageLocal(socket, name)
                                     }
-                                //发送断开连接信号
-                                send.writeUTF("END")
-                            } catch (e: SocketTimeoutException) {
-                                //LogUtil.e(tag, e.message.toString())
-                            } catch (e: ConnectException) {
-                                //e.printStackTrace()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                LogUtil.e(tag, "访问IP出现错误：$tempIP $e")
-                            } finally {
-                                socket?.close()
+                                    //将建立过连接的主机添加到可访问主机中
+                                    addContact(Contact(name, tempIP, avatarUri.toString(), true))
+                                    if (avatarUri.toString() == "")   //没有头像也要添加到历史联系人数据库
+                                        DBUtil.setAvatarContact(name, avatarUri.toString())
+                                    //发送自身信息
+                                    send.writeUTF(MyData.username)
+                                    if (get.readUTF() == "YES")
+                                        if (MyData.myAvatarUri.toString() == "")
+                                            send.writeUTF("NO")
+                                        else {
+                                            send.writeUTF("YES")
+                                            sendImageLocal(socket, MyData.myAvatarUri)
+                                        }
+                                    //发送断开连接信号
+                                    send.writeUTF("END")
+                                } catch (e: SocketTimeoutException) {
+                                    //LogUtil.e(tag, e.message.toString())
+                                } catch (e: ConnectException) {
+                                    //e.printStackTrace()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    LogUtil.e(tag, "访问IP出现错误：$tempIP $e")
+                                } finally {
+                                    socket?.close()
+                                    //LogUtil.d(tag, "$tempIP done!")
+                                }
                             }
                         }
                     }
                 }
             }
-            Thread.sleep(1500)  //等待发送完成
-            LogUtil.d(tag, "在本地局域网找到的IP: ${MyData.accessContact}")
+            LogUtil.d(tag, "在本地局域网找到的IP: ${MyData.onlineContact}")
             //更新UI
             val msg = Message()
             msg.what = ContactListActivity.updateRecyclerView
@@ -288,8 +300,8 @@ object NetUtil {
         LogUtil.e(tag, "服务器发送一张图片:$uri,图片大小:$totalLen")
     }
 
-    //局域网客户端接收图片并保存
-    private fun getImageLocal(socket: Socket, username: String = ""): Uri {
+    //局域网客户端接收图片并保存 contactName用来判断是否接收的头像，是的话更新联系人数据库
+    private fun getImageLocal(socket: Socket, contactName: String = ""): Uri {
         val dataInputStream = DataInputStream(socket.getInputStream())
         val isSend = dataInputStream.readInt()
         if (isSend == 0)
@@ -311,8 +323,8 @@ object NetUtil {
             val bitmapName = ImageUtil.getName()
             LogUtil.e(tag, "客户端接收到一张图片:$bitmapName,图片大小:  $totalLen,arr大小:  ${arr.size}")
             ImageUtil.saveBitmapToPicture(bitmap, bitmapName)?.run {
-                if (username != "")
-                    DBUtil.setAvatarContact(username, this, bitmapName)
+                if (contactName != "")
+                    DBUtil.setAvatarContact(contactName, this.toString(), bitmapName)
                 return this
             }
         } catch (e: Exception) {
@@ -335,7 +347,7 @@ object NetUtil {
                 //更新到数据库中去
                 DBUtil.DB.execSQL(
                     "insert into msg values(?,?,?,?,?)",
-                    arrayOf(MyData.username, contactName, Msg.TYPE_SENT, message, TimeMsg.getDate())
+                    arrayOf(MyData.username, contactName, Msg.TYPE_SENT, message, DateUtil.getDate())
                 )
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -346,7 +358,7 @@ object NetUtil {
     }
 
     //局域网发送一张照片
-    fun sendSingleImageLocal(imageUri: Uri, contactName: String, ip: String,contactMessenger:Messenger) {
+    fun sendSingleImageLocal(imageUri: Uri, contactName: String, ip: String) {
         MyApplication.scope.launch(Dispatchers.IO) {
             var socket: Socket? = null
             try {
@@ -366,7 +378,7 @@ object NetUtil {
                                 contactName,
                                 Msg.TYPE_IMAGE_SENT,
                                 it.toString(),
-                                TimeMsg.getDate()
+                                DateUtil.getDate()
                             )
                         )
                         //添加到待更新聊天信息列表
@@ -402,10 +414,10 @@ object NetUtil {
 
     //为多线程提供的锁
     @Synchronized
-    private fun addAddress(contact: Contact) {
-        if (MyData.accessContact.containsKey(contact.name))//已有相同用户直接跳过
+    private fun addContact(contact: Contact) {
+        if (MyData.onlineContact.containsKey(contact.name))//已有相同用户直接跳过
             return
-        MyData.accessContact[contact.name] = contact
+        MyData.onlineContact[contact.name] = contact
     }
 
     //获取本机的IP地址
@@ -427,5 +439,219 @@ object NetUtil {
                 (i shr 8 and 0xFF) + "." +
                 (i shr 16 and 0xFF) + "." +
                 (i shr 24 and 0xFF)
+    }
+
+    //从服务器获取聊天用户
+    fun searchInternet(contactListMessenger: Messenger) {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            try {
+                val urlInfo = urlHead + "android/info?" + "name=${MyData.username}"
+                val request = Request.Builder().url(urlInfo).build()
+                val response = MyApplication.client.newCall(request).execute()
+                val result = response.body?.string()
+                val type = object : TypeToken<List<Contact>>() {}.type
+                val contacts: List<Contact> = gson.fromJson(result, type)   //返回的json数据转换为联系人列表
+                LogUtil.d(tag, "纯净的从服务器找到的contact${contacts}")
+                withContext(Dispatchers.IO) {
+                    for (contact in contacts) {                 //将服务器有记录的主机添加到可访问主机中
+                        launch {
+                            withContext(Dispatchers.IO) Return@{
+                                if (contact.name == MyData.username)    //排除自己账号
+                                    return@Return
+                                if (contact.avatarUri != "") {
+                                    LogUtil.e(tag, "urlToUri内容：${MyData.urlToUri}")
+                                    //如果保存过联系人对应的头像，且头像不为空，直接使用本地uri
+                                    if (MyData.urlToUri.containsKey(contact.avatarUri) && MyData.urlToUri[contact.avatarUri] != "")
+                                        contact.avatarUri = MyData.urlToUri[contact.avatarUri]!!
+                                    else {    //如果没有保存过联系人对应的头像，当即保存并使用保存后的uri,uri插入数据库
+                                        val request1 = Request.Builder().url(urlHead + contact.avatarUri).build()
+                                        LogUtil.e(tag, "访问的url: ${urlHead + contact.avatarUri}")
+                                        //虚拟机下载图片要二十秒，但是真机下载非常快
+                                        val starTime = System.currentTimeMillis()
+                                        val response1 = MyApplication.client.newCall(request1).execute()
+                                        LogUtil.e(tag,"下载头像用时:${(System.currentTimeMillis()-starTime)/1000}秒")
+                                        val bitmap = BitmapFactory.decodeStream(response1.body?.byteStream())
+                                        val avatarName = ImageUtil.getName()
+                                        //把接收到的头像信息保存到本地相册，并更新contact数据库
+                                        ImageUtil.saveBitmapToPicture(bitmap, avatarName)?.run {
+                                            DBUtil.setAvatarContact(contact.name, this.toString(), avatarName)
+                                            //更新uriToUri数据库
+                                            DBUtil.DB.execSQL(
+                                                "INSERT INTO urlToUri values(?,?)",
+                                                arrayOf(contact.avatarUri, this.toString())
+                                            )
+                                            contact.avatarUri = this.toString()
+                                        }
+                                    }
+                                } else //没有头像也要添加到历史联系人数据库
+                                    DBUtil.setAvatarContact(contact.name, contact.avatarUri)
+                                addContact(contact)
+                            }
+                        }
+                    }
+                }
+                LogUtil.d(tag, "在服务器找到的IP: ${MyData.onlineContact}")
+                //更新UI
+                val msg = Message()
+                msg.what = ContactListActivity.updateRecyclerView
+                contactListMessenger.send(msg)
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    //从服务器登出
+    fun logoutInternet() {
+        thread {
+            val urlInfo = urlHead + "android/logout?name=${MyData.username}"
+            val request = Request.Builder().url(urlInfo).build()
+            MyApplication.client.newCall(request).execute()
+            LogUtil.d(tag, "从服务器退出：${MyData.username}")
+        }
+        Thread.sleep(200)   //等待请求完成
+    }
+
+    fun sendAvatarInternet(uri: Uri) {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            ImageUtil.getInputStream(uri)?.readBytes()?.let { fileData ->
+                val urlInfo = urlHead + "android/uploadAvatar?name=${MyData.username}"
+                val fileBody = fileData.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("file", ImageUtil.getName() + ".jpg", fileBody)
+                    .build()
+                val request = Request.Builder().url(urlInfo).post(requestBody).build()
+                val response = MyApplication.client.newCall(request).execute()
+                val result = response.body?.string()
+                LogUtil.d(tag, "上传头像到服务器：${result.toString()}")
+            }
+        }
+    }
+
+    //把发送的消息发送到服务器上
+    fun sendMessageInternet(contactName: String, content: String) {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            try {
+                val urlInfo = urlHead + "android/sendMessage?" +
+                        "name=${MyData.username}&contactName=${contactName}"
+                val formBody = FormBody.Builder().add("content", content).build()
+                val request = Request.Builder().url(urlInfo).post(formBody).build()
+                val response = MyApplication.client.newCall(request).execute()
+                val result = response.body?.string()
+                DBUtil.DB.execSQL(
+                    "insert into msg values(?,?,?,?,?)",
+                    arrayOf(MyData.username, contactName, Msg.TYPE_SENT, content, DateUtil.getDate())
+                )
+                LogUtil.d(tag, "发送消息给服务器：${result.toString()}")
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    //发送图片到服务器
+    fun sendSingleImageInternet(uri: Uri, contactName: String) {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            try {
+                ImageUtil.getInputStream(uri)?.readBytes()?.let { fileData ->
+                    val urlInfo = urlHead + "android/sendImage?name=${MyData.username}&contactName=$contactName"
+                    val fileBody = fileData.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                    val requestBody = MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart("file", ImageUtil.getName() + ".jpg", fileBody)
+                        .build()
+                    val request = Request.Builder().url(urlInfo).post(requestBody).build()
+                    val response = MyApplication.client.newCall(request).execute()
+                    val result = response.body?.string()
+                    LogUtil.d(tag, "发送图片到服务器：${uri}，服务器url：$result")
+                    //保存图片到数据库
+                    ImageUtil.getBitmapFromUri(uri)?.let { bitmap ->
+                        ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {
+                            DBUtil.DB.execSQL(
+                                "insert into msg values(?,?,?,?,?)",
+                                arrayOf(
+                                    MyData.username,
+                                    contactName,
+                                    Msg.TYPE_IMAGE_SENT,
+                                    it.toString(),
+                                    DateUtil.getDate()
+                                )
+                            )
+                            //添加到待更新聊天信息列表
+                            MyData.getTempMsgList(contactName)
+                                .add(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
+                        }
+                    }
+                }
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    //从服务器上下载其他人发给自己的消息
+    fun getMessageInternet() {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            if (!isGetMessageInternet) {
+                isGetMessageInternet = true
+                while (true) {
+                    try {
+                        val urlInfo = urlHead + "android/getMessage?" + "name=${MyData.username}"
+                        val request = Request.Builder().url(urlInfo).build()
+                        val response = MyApplication.client.newCall(request).execute()
+                        val result = response.body?.string() ?: ""
+                        LogUtil.d(tag, "从服务器接收到的消息${result}")
+                        if (result.length < 5) {  //长度小于五代表无任何新消息
+                            delay(2000)
+                            continue
+                        }
+                        //获取联系人的消息
+                        val type = object : TypeToken<HashMap<String, List<TimeMsg>>>() {}.type
+                        val internetTimeMsgMap: HashMap<String, List<TimeMsg>> =
+                            gson.fromJson(result, type)   //返回的json数据转换为联系人列表
+                        //插入到数据库
+                        internetTimeMsgMap.forEach { (key, value) ->
+                            for (timeMsg: TimeMsg in value) {
+                                with(timeMsg) {
+                                    when (this.type) {
+                                        Msg.TYPE_RECEIVED ->
+                                            DBUtil.DB.execSQL(
+                                                "insert into msg values(?,?,?,?,?)",
+                                                arrayOf(MyData.username, contactName, this.type, content, date)
+                                            )
+                                        Msg.TYPE_IMAGE_RECEIVED -> {      //发送的是图片，需要下载图片保存到本地
+                                            val request1 = Request.Builder().url(urlHead + timeMsg.content).build()
+                                            LogUtil.e(tag, "下载的图片url: ${urlHead + timeMsg.content}")
+                                            //虚拟机下载图片要二十秒，但是真机下载非常快
+                                            val response1 = MyApplication.client.newCall(request1).execute()
+                                            val bitmap = BitmapFactory.decodeStream(response1.body?.byteStream())
+                                            val imageName = ImageUtil.getName()
+                                            //把接收到的图片保存到本地相册，并更新timeMsg数据库
+                                            ImageUtil.saveBitmapToPicture(bitmap, imageName)?.let {
+                                                this.content = it.toString()
+                                                DBUtil.DB.execSQL(
+                                                    "INSERT INTO msg values(?,?,?,?,?)",
+                                                    arrayOf(MyData.username, contactName, this.type, content, date)
+                                                )
+                                            }
+                                        }
+                                        else -> {
+                                            LogUtil.e(tag, "接收到的信息有误！！！")
+                                        }
+                                    }
+                                }
+                            }
+                            MyData.getTempMsgList(key).addAll(value)
+                        }
+                    } catch (e: Exception) {
+                        //e.printStackTrace()
+                        delay(2000)
+                    } finally {
+                        delay(700)
+                    }
+                }
+            }
+        }
     }
 }

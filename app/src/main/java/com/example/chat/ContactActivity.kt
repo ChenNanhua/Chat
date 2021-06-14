@@ -6,10 +6,7 @@ import android.net.Uri
 import android.os.*
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.chat.chatUtil.ImageUtil
-import com.example.chat.chatUtil.NetUtil
-import com.example.chat.chatUtil.LogUtil
-import com.example.chat.chatUtil.MyData
+import com.example.chat.chatUtil.*
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
@@ -19,15 +16,15 @@ import kotlin.collections.ArrayList
 class ContactActivity : MyActivity(), View.OnClickListener {
     private var adapter: ContactAdapter? = null
     private lateinit var contactAvatarUri: Uri          //聊天对象的头像信息
-    private lateinit var contact: Contact       //聊天对象的信息
-    private lateinit var msgList: ArrayList<Msg> //聊天对象的历史聊天记录
-    private lateinit var tempMsgList: ArrayList<TimeMsg>
+    private lateinit var contact: Contact               //聊天对象的信息
+    private lateinit var msgList: ArrayList<Msg>        //聊天对象的历史聊天记录
+    private lateinit var tempMsgList: ArrayList<TimeMsg>    //新的聊天信息，将添加到msgList
 
-    //更新消息列表
     companion object {
-        const val updateRecyclerView = 1
+        const val updateRecyclerView = 1    //更新消息信号
     }
 
+    //主线程更新聊天信息
     private val handler = object : Handler(Looper.myLooper()!!) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
@@ -102,18 +99,16 @@ class ContactActivity : MyActivity(), View.OnClickListener {
     //点击发送按钮后更新聊天界面
     override fun onClick(v: View?) {
         when (v) {
-            sendMessage -> {
+            sendMessage -> {    //发送文字消息
                 val content = inputText.text.toString()
+                if (content.isEmpty())
+                    return
                 inputText.setText("")
-                if (content.isNotEmpty()) {
-                    msgList.add(Msg(content, Msg.TYPE_SENT, MyData.myAvatarUri))
-                    LogUtil.d(tag, "发送消息：$content")
-                    //有新消息时刷新RecyclerView中的显示
-                    adapter?.notifyItemInserted(msgList.size - 1)
-                    //将RecyclerView定位到最后一行
-                    contactRecycleView.scrollToPosition(msgList.size - 1)
+                tempMsgList.add(TimeMsg(contact.name, Msg.TYPE_SENT,content,DateUtil.getDate()))
+                if (contact.isLocal)
                     NetUtil.sendMessageLocal(content, contact.name, contact.IP)
-                }
+                else
+                    NetUtil.sendMessageInternet(contact.name, content)
             }
             choseImage -> {     //打开相册,选择要发送的的图片
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
@@ -130,7 +125,10 @@ class ContactActivity : MyActivity(), View.OnClickListener {
             2 -> {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     data.data?.let {
-                        NetUtil.sendSingleImageLocal(it, contact.name, contact.IP, contactMessenger)
+                        if (contact.isLocal)
+                            NetUtil.sendSingleImageLocal(it, contact.name, contact.IP)
+                        else
+                            NetUtil.sendSingleImageInternet(it, contact.name)
                         LogUtil.d(tag, "选取的照片Uri:$it")
                     }
                 }

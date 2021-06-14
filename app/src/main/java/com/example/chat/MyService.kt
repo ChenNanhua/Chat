@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.os.Messenger
+import com.example.chat.chatUtil.DBUtil
 import com.example.chat.chatUtil.NetUtil
 import com.example.chat.chatUtil.LogUtil
 
@@ -24,6 +25,8 @@ class MyService : Service() {
         val messenger = intent?.extras?.get("contactListMessenger") as Messenger
         NetUtil.startServerLocal(messenger)
         NetUtil.searchLocal(messenger)
+        NetUtil.searchInternet(messenger)
+        NetUtil.getMessageInternet()
         return START_NOT_STICKY
     }
 
@@ -31,6 +34,8 @@ class MyService : Service() {
         super.onDestroy()
         LogUtil.d(tag, "onDestroy")
         LogUtil.w(tag, "MyService被关闭")
+        NetUtil.logoutInternet()
+        DBUtil.close()
         MyApplication.job.cancel()
         NetUtil.serverSocket.close()
     }

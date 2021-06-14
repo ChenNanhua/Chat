@@ -28,8 +28,8 @@ fun main() {
             }
             println("完成接收")
         } finally {
-            if (fos != null) fos.close()
-            if (dis != null) dis.close()
+            fos?.close()
+            dis?.close()
             socket?.close()
         }
     } catch (e: java.lang.Exception) {

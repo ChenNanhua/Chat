@@ -1,13 +1,16 @@
 package com.example.chat
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import com.example.chat.chatUtil.DBUtil.DB
 import com.example.chat.chatUtil.MyData
 import com.example.chat.chatUtil.HashUtil
@@ -27,6 +30,14 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         buttonLogin.setOnClickListener(this)
         buttonRegister.setOnClickListener(this)
         buttonQuit.setOnClickListener(this)
+
+        //动态申请权限
+        ActivityCompat.requestPermissions(
+            this, arrayOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ), 1
+        )
 
         //判断是否记住密码
         val username: String = shared.getString("username", "")!!
@@ -48,6 +59,16 @@ class LoginActivity : MyActivity(), View.OnClickListener {
             login(username)
             Toast.makeText(this, "自动登录成功...", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    //动态申请权限的回调方法
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            //Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
+        } else {    //获取权限失败
+            Toast.makeText(this, "请授予必要权限...", Toast.LENGTH_SHORT).show()
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onClick(v: View?) {

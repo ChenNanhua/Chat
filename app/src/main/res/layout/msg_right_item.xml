@@ -8,7 +8,6 @@
         android:id="@+id/msgRightAvatar"
         android:layout_width="54dp"
         android:layout_height="54dp"
-        android:layout_margin="3dp"
         android:contentDescription="@string/avatar"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -17,6 +16,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/message_right"
+        android:layout_marginTop="15dp"
         app:layout_constraintRight_toLeftOf="@id/msgRightAvatar"
         app:layout_constraintTop_toTopOf="@id/msgRightAvatar"
         app:layout_constraintWidth_max="wrap"
@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="start"
-            android:padding="5dp"
+            android:padding="2dp"
             android:textColor="#FFF"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

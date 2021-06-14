@@ -52,30 +52,12 @@ class ContactListActivity : MyActivity() {
             }
         //初始化已保存的联系人列表
         MyData.initSavedContact()
-        //动态申请权限
-        ActivityCompat.requestPermissions(
-            this, arrayOf(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ), 1
-        )
-        //开启搜索局域网用户的服务
+        //初始化服务器Url对应的本地Uri
+        MyData.initUrlToUri()
+        //开启搜索用户的服务
         val serviceIntent = Intent(this, MyService::class.java)
         serviceIntent.putExtra("contactListMessenger", contactListMessenger)
         startService(serviceIntent)
-        //添加部分测试操作
-        //test()
-    }
-
-
-    //动态申请权限的回调方法
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            //Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
-        } else {    //获取权限失败
-            Toast.makeText(this, "请授予必要权限...", Toast.LENGTH_SHORT).show()
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     //创建menu菜单
@@ -108,22 +90,11 @@ class ContactListActivity : MyActivity() {
                 }
             }
             R.id.test -> {
-                thread {
-                    val client = OkHttpClient()
-                    val request =
-                        Request.Builder().url("http://125.216.247.37:8080/image/charon.jpg").build()
-                    val response = client.newCall(request).execute()
-                    val result = response.body?.bytes()!!
-                    val bitmap = BitmapFactory.decodeByteArray(result, 0, result.size)
-                    runOnUiThread {
-                        contactListToolbarImageView.setImageBitmap(bitmap)
-                    }
-                }
+                DBUtil.DB.execSQL("DELETE FROM urlToUri")
             }
         }
         return true
     }
-
 
     //打开其他activity后回调结果
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -153,14 +124,21 @@ class ContactListActivity : MyActivity() {
         LogUtil.d(tag, "更新联系人列表")
         contactList.clear()     //清空以往保存的联系人信息
         with(contactList) {
-            MyData.accessContact.forEach {
-                add(it.value)
+            //先添加历史聊天对象，再添加新发现的聊天对象
+            MyData.savedContact.forEach {
+                if (MyData.onlineContact.containsKey(it.key)) {
+                    add(MyData.onlineContact[it.key]!!)
+                } else
+                    add(it.value)
             }
+            MyData.onlineContact.forEach {
+                if (!MyData.savedContact.containsKey(it.key))
+                    add(it.value)
+            }
+            sortBy { contact -> !contact.isOnline }     //根据是否在线排序
         }
-        val layoutManager = LinearLayoutManager(this)
-        val adapter = ContactListAdapter(contactList)
         contactListRecycleView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
-        contactListRecycleView.layoutManager = layoutManager
-        contactListRecycleView.adapter = adapter
+        contactListRecycleView.layoutManager = LinearLayoutManager(this)
+        contactListRecycleView.adapter = ContactListAdapter(contactList)
     }
 }

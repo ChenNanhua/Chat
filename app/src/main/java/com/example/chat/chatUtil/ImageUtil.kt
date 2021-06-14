@@ -1,8 +1,6 @@
 package com.example.chat.chatUtil
 
-import android.R.attr.data
 import android.content.ContentValues
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -77,6 +75,8 @@ object ImageUtil {
 
     //通过输入的uri获取bitmap
     fun getBitmapFromUri(uri: Uri): Bitmap? {
+        if (uri.toString()=="")
+            return null
         try {
             MyApplication.context.contentResolver.openFileDescriptor(uri, "r").use {
                 return BitmapFactory.decodeFileDescriptor(it?.fileDescriptor)
