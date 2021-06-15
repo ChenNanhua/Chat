@@ -1,5 +1,6 @@
 package com.example.chat.chatUtil
 
+import android.graphics.Bitmap
 import android.net.Uri
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
@@ -12,13 +13,17 @@ object MyData {
     private val DB = DBUtil.DB
 
     //个人信息
-    var username = ""
+    var username = ""   //我的名字
     var myAvatarUri: Uri = Uri.parse("")
+    var myBitmap: Bitmap =  ImageUtil.getBitmapFromResource()    //我的头像bitmap
+    var contactBitmap: Bitmap = ImageUtil.getBitmapFromResource()    //聊天对象bitmap
 
-    //聊天消息
+    //所有聊天消息集合
     private val msgMap = HashMap<String, ArrayList<Msg>>()  //保存所有聊天对象的历史聊天记录
+
     //带时间的聊天信息，用于插入到数据库
     private val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()  //保存新的、待展示到界面上的聊天记录
+
     //判断聊天对象
     var tempMsgMapName = ""
 
@@ -28,8 +33,9 @@ object MyData {
 
     //已保存过的联系人
     val savedContact: HashMap<String, Contact> = HashMap()
+
     //服务器Url对应的本地Uri
-    val urlToUri:HashMap<String,String> = HashMap()
+    val urlToUri: HashMap<String, String> = HashMap()
 
     //初始化savedContact
     fun initSavedContact() {
@@ -47,7 +53,7 @@ object MyData {
         }
     }
 
-    fun initUrlToUri(){
+    fun initUrlToUri() {
         thread {
             DB.rawQuery("select * from urlToUri", arrayOf()).use {
                 if (it.moveToFirst()) {
@@ -65,7 +71,6 @@ object MyData {
     //初始化msgMap
     fun initMsgMap() {
         thread {    //在子线程中执行避免界面卡顿
-            //Thread.sleep(200)   //延时一会，防止savedContact未初始化完成
             msgMap.clear()
             DB.rawQuery(    //获取该用户所有的联系人
                 "select contactName from msg where username =? group by contactName",
@@ -86,18 +91,7 @@ object MyData {
                                     msgMap[contactName]!!.add(
                                         Msg(
                                             it.getString(0),   //content
-                                            it.getString(1).toInt(),      //type
-                                            with(it.getString(1).toInt()) {     //返回消息对应的图片Uri
-                                                when (this) {   //根据不同的类型设置不同的头像uri
-                                                    Msg.TYPE_SENT -> myAvatarUri
-                                                    Msg.TYPE_IMAGE_SENT -> myAvatarUri
-                                                    Msg.TYPE_RECEIVED -> Uri.parse(savedContact[contactName]!!.avatarUri)
-                                                    Msg.TYPE_IMAGE_RECEIVED -> Uri.parse(
-                                                        savedContact[contactName]!!.avatarUri
-                                                    )
-                                                    else -> myAvatarUri
-                                                }
-                                            }
+                                            it.getString(1).toInt()      //type
                                         )
                                     )
                                 } while (it.moveToNext())
@@ -123,7 +117,7 @@ object MyData {
         return msgMap[contactName]!!
     }
 
-    //保存待展示在界面上的聊天信息
+    //获取待展示在界面上的聊天信息
     fun getTempMsgList(contactName: String): ArrayList<TimeMsg> {
         if (!tempTimeMsgMap.containsKey(contactName))
             tempTimeMsgMap[contactName] = ArrayList()

@@ -9,11 +9,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.example.chat.chatUtil.DBUtil.DB
 import com.example.chat.chatUtil.MyData
 import com.example.chat.chatUtil.HashUtil
+import com.example.chat.chatUtil.TinyUtil.toast
 import kotlinx.android.synthetic.main.activity_login.*
 
 class LoginActivity : MyActivity(), View.OnClickListener {
@@ -57,7 +57,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         if (autoLoginName != "" && autoLoginName == username && intent.getStringExtra("NoAutoLogin") == null) {
             autoLogin.isChecked = true
             login(username)
-            Toast.makeText(this, "自动登录成功...", Toast.LENGTH_SHORT).show()
+            "自动登录成功...".toast()
         }
     }
 
@@ -66,7 +66,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             //Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
         } else {    //获取权限失败
-            Toast.makeText(this, "请授予必要权限...", Toast.LENGTH_SHORT).show()
+            "请授予必要权限...".toast()
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
@@ -82,7 +82,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
                         val sqlPassword = it.getString(0)
                         if (sqlPassword == passwordMd5 || sqlPassword == password) {
                             //成功登录
-                            Toast.makeText(this, "登录成功...", Toast.LENGTH_SHORT).show()
+                            "登录成功...".toast()
                             //保存记住密码信息
                             if (rememberPassword.isChecked)
                                 DB.execSQL("update user set remember = 1 where username = ?", arrayOf(username))
@@ -97,12 +97,12 @@ class LoginActivity : MyActivity(), View.OnClickListener {
                             sharedEdit.putString("username", username).apply()
                             login(username)
                         } else {  //没有匹配账号，登录失败
-                            Toast.makeText(this, "密码错误！", Toast.LENGTH_SHORT).show()
+                            "密码错误！".toast()
                             editName.setText("")
                             editPassword.setText("")
                         }
                     } else {
-                        Toast.makeText(this, "账号错误！", Toast.LENGTH_SHORT).show()
+                        "账号错误！".toast()
                         editName.setText("")
                         editPassword.setText("")
                     }

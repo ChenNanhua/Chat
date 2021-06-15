@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/setAvatar"
         android:title="@string/setAvatar"/>
     <item
         android:id="@+id/clear"
-        android:title="@string/clear"/>
+        android:icon="@mipmap/ic_delete"
+        android:title="@string/clear"
+        app:showAsAction="always"/>
     <item
-        android:id="@+id/searchIP"
+        android:id="@+id/searchContact"
         android:title="@string/search_contact"/>
     <item
         android:id="@+id/logout"

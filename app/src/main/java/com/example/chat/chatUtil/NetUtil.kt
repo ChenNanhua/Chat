@@ -6,11 +6,11 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Message
 import android.os.Messenger
-import android.widget.Toast
 import androidx.core.content.ContextCompat.getSystemService
 import com.example.chat.ContactListActivity
 import com.example.chat.MyApplication
 import com.example.chat.chatUtil.*
+import com.example.chat.chatUtil.TinyUtil.toast
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
@@ -404,8 +404,8 @@ object NetUtil {
                     val msg = Message()
                     msg.what = ContactListActivity.updateRecyclerView
                     contactMessenger.send(msg)
-                }
-                delay(300)  //每三百毫秒更新一次聊天信息
+                }else
+                    delay(400)  //没有新消息时休眠400毫秒
                 if (tempMsgMapName != MyData.tempMsgMapName)    //判断是否仍在对应聊天对象的聊天界面
                     break
             }
@@ -425,7 +425,7 @@ object NetUtil {
         val wm = getSystemService(MyApplication.context, WifiManager::class.java)
         //检查Wifi状态
         if (!wm!!.isWifiEnabled) {
-            Toast.makeText(MyApplication.context, "未连接WIFI，请打开WIFI", Toast.LENGTH_SHORT).show()
+            "未连接WIFI，请打开WIFI".toast()
             return "0.0.0.0"
         }
         val wi = wm.connectionInfo
@@ -458,7 +458,7 @@ object NetUtil {
                             withContext(Dispatchers.IO) Return@{
                                 if (contact.name == MyData.username)    //排除自己账号
                                     return@Return
-                                if (contact.avatarUri != "") {
+                                if (contact.avatarUri != "") {      //头像链接不为空，获取头像数据
                                     LogUtil.e(tag, "urlToUri内容：${MyData.urlToUri}")
                                     //如果保存过联系人对应的头像，且头像不为空，直接使用本地uri
                                     if (MyData.urlToUri.containsKey(contact.avatarUri) && MyData.urlToUri[contact.avatarUri] != "")
@@ -483,8 +483,9 @@ object NetUtil {
                                             contact.avatarUri = this.toString()
                                         }
                                     }
-                                } else //没有头像也要添加到历史联系人数据库
-                                    DBUtil.setAvatarContact(contact.name, contact.avatarUri)
+                                }
+                                //无论有没有头像都要添加到历史联系人数据库
+                                DBUtil.setAvatarContact(contact.name, contact.avatarUri)
                                 addContact(contact)
                             }
                         }

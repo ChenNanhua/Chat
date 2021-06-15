@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import com.example.chat.MyApplication
+import com.example.chat.R
 import java.io.InputStream
 import java.util.*
 
@@ -86,7 +87,10 @@ object ImageUtil {
         }
         return null
     }
-
+    //R.drawable转bitmap
+    fun getBitmapFromResource(resource:Int = R.drawable.none):Bitmap{
+        return BitmapFactory.decodeResource(MyApplication.context.resources,resource)
+    }
     //通过输入的uri获取FileDescriptor
     fun getInputStream(uri: Uri): InputStream? {
         return MyApplication.context.contentResolver.openInputStream(uri)

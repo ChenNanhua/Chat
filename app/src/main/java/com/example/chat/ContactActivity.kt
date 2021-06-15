@@ -11,14 +11,14 @@ import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
 import kotlinx.android.synthetic.main.activity_contact.*
+import java.lang.Exception
 import kotlin.collections.ArrayList
 
 class ContactActivity : MyActivity(), View.OnClickListener {
     private var adapter: ContactAdapter? = null
-    private lateinit var contactAvatarUri: Uri          //聊天对象的头像信息
     private lateinit var contact: Contact               //聊天对象的信息
     private lateinit var msgList: ArrayList<Msg>        //聊天对象的历史聊天记录
-    private lateinit var tempMsgList: ArrayList<TimeMsg>    //新的聊天信息，将添加到msgList
+    private lateinit var tempMsgList: ArrayList<TimeMsg>    //新的聊天信息，待添加到msgList
 
     companion object {
         const val updateRecyclerView = 1    //更新消息信号
@@ -31,25 +31,26 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                 updateRecyclerView -> {
                     //更新界面
                     if (tempMsgList.size > 0) {
+                        val positionStart = msgList.size - 1
+                        var count = 0
                         val removeTempMsgList = ArrayList<TimeMsg>()
                         //依次取出消息显示在屏幕上
                         for (i in 0 until tempMsgList.size) {
                             with(tempMsgList[i]) {
-                                when (this.type) {
-                                    Msg.TYPE_SENT -> msgList.add(Msg(this.content, this.type, MyData.myAvatarUri))
-                                    Msg.TYPE_RECEIVED -> msgList.add(Msg(this.content, this.type, contactAvatarUri))
-                                    Msg.TYPE_IMAGE_RECEIVED -> msgList.add(
-                                        Msg(this.content, this.type, contactAvatarUri)
-                                    )
-                                    Msg.TYPE_IMAGE_SENT -> msgList.add(Msg(this.content, this.type, MyData.myAvatarUri))
+                                when (type) {
+                                    Msg.TYPE_SENT -> msgList.add(Msg(content, type))
+                                    Msg.TYPE_RECEIVED -> msgList.add(Msg(content, type))
+                                    Msg.TYPE_IMAGE_RECEIVED -> msgList.add(Msg(content, type))
+                                    Msg.TYPE_IMAGE_SENT -> msgList.add(Msg(content, type))
                                 }
+                                count++
                                 removeTempMsgList.add(this)
                             }
-                            //刷新新的一行
-                            adapter?.notifyItemInserted(msgList.size - 1)
-                            //将RecyclerView定位到最后一行
-                            contactRecycleView.scrollToPosition(msgList.size - 1)
                         }
+                        //刷新新的一行
+                        adapter?.notifyItemRangeInserted(positionStart, count)
+                        //将RecyclerView定位到最后一行
+                        contactRecycleView.scrollToPosition(msgList.size - 1)
                         tempMsgList.removeAll(removeTempMsgList)
                     }
                 }
@@ -64,27 +65,33 @@ class ContactActivity : MyActivity(), View.OnClickListener {
 
         //获取聊天对象contact信息
         contact = intent.getSerializableExtra("contact") as Contact
-        contactAvatarUri = Uri.parse(contact.avatarUri)
         LogUtil.d(tag, "聊天的对象: $contact")
+        //设置我的bitmap和聊天对象bitmap
+        try {
+            ImageUtil.getBitmapFromUri(MyData.myAvatarUri)?.let {
+                MyData.myBitmap = it
+            }
+            ImageUtil.getBitmapFromUri(Uri.parse(contact.avatarUri))?.let {
+                MyData.contactBitmap = it
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         //聊天消息的获取
         msgList = MyData.getMsgList(contact.name)
         tempMsgList = MyData.getTempMsgList(contact.name)
 
+        //toolbar设置头像和名字
+        contactToolbarImageView.setImageBitmap(MyData.contactBitmap)
+        contactTitle.text = contact.name
+
         //聊天消息界面初始化
-        val layoutManager = LinearLayoutManager(this)
-        adapter = ContactAdapter(msgList)
-        contactRecycleView.adapter = adapter
-        contactRecycleView.layoutManager = layoutManager
+        contactRecycleView.adapter = ContactAdapter(msgList)
+        contactRecycleView.layoutManager = LinearLayoutManager(this)
         contactRecycleView.scrollToPosition(msgList.size - 1)
         sendMessage.setOnClickListener(this)
         choseImage.setOnClickListener(this)
-
-        //toolbar设置头像和名字
-        ImageUtil.getBitmapFromUri(contactAvatarUri)?.let {
-            contactToolbarImageView.setImageBitmap(it)
-        }
-        contactTitle.text = contact.name
 
         //后台更新聊天记录
         MyData.tempMsgMapName = contact.name
@@ -93,6 +100,9 @@ class ContactActivity : MyActivity(), View.OnClickListener {
 
     override fun onDestroy() {
         MyData.tempMsgMapName = ""
+        //重置我的bitmap和聊天对象bitmap
+        MyData.myBitmap = ImageUtil.getBitmapFromResource()
+        MyData.contactBitmap = ImageUtil.getBitmapFromResource()
         super.onDestroy()
     }
 
@@ -104,7 +114,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                 if (content.isEmpty())
                     return
                 inputText.setText("")
-                tempMsgList.add(TimeMsg(contact.name, Msg.TYPE_SENT,content,DateUtil.getDate()))
+                tempMsgList.add(TimeMsg(contact.name, Msg.TYPE_SENT, content, DateUtil.getDate()))
                 if (contact.isLocal)
                     NetUtil.sendMessageLocal(content, contact.name, contact.IP)
                 else

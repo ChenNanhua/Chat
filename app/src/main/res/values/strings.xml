@@ -35,4 +35,7 @@
     <string name="internet">internet</string>
     <string name="online">online</string>
     <string name="offline">offline</string>
+    <string name="noAnything"> </string>
+    <string name="updateName">修改名字</string>
+    <string name="swipeRefresh_behavior">swipeRefresh_behavior</string>
 </resources>
