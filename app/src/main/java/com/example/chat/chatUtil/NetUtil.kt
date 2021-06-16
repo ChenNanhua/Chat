@@ -6,10 +6,14 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Message
 import android.os.Messenger
+import android.text.format.Time
 import androidx.core.content.ContextCompat.getSystemService
 import com.example.chat.ContactListActivity
 import com.example.chat.MyApplication
 import com.example.chat.chatUtil.*
+import com.example.chat.chatUtil.TinyUtil.addInsert
+import com.example.chat.chatUtil.TinyUtil.addInsertAll
+import com.example.chat.chatUtil.TinyUtil.loge
 import com.example.chat.chatUtil.TinyUtil.toast
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
@@ -23,6 +27,8 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.*
 import java.net.*
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
 /*
@@ -123,12 +129,7 @@ object NetUtil {
                     val content = get.readUTF()
                     with(TimeMsg(name, Msg.TYPE_RECEIVED, content)) {
                         //添加到待展示的数据中
-                        MyData.getTempMsgList(name).add(this)
-                        //更新到数据库中去
-                        DBUtil.DB.execSQL(
-                            "insert into msg values(?,?,?,?,?)",
-                            arrayOf(MyData.username, contactName, type, content, date)
-                        )
+                        MyData.getTempMsgList(name).addInsert(this)
                     }
                 }
                 "image" -> {
@@ -137,12 +138,7 @@ object NetUtil {
                     with(getImageLocal(socket)) {
                         with(TimeMsg(name, Msg.TYPE_IMAGE_RECEIVED, this.toString())) {
                             //添加到待展示的数据中
-                            MyData.getTempMsgList(name).add(this)
-                            //更新到数据库中去
-                            DBUtil.DB.execSQL(
-                                "insert into msg values(?,?,?,?,?)",
-                                arrayOf(MyData.username, contactName, type, content, date)
-                            )
+                            MyData.getTempMsgList(name).addInsert(this)
                         }
                     }
                 }
@@ -334,7 +330,7 @@ object NetUtil {
     }
 
     //在局域网中发送消息
-    fun sendMessageLocal(message: String, contactName: String, ip: String) {
+    fun sendMessageLocal(content: String, contactName: String, ip: String) {
         MyApplication.scope.launch(Dispatchers.IO) {
             var socket: Socket? = null
             try {
@@ -342,13 +338,10 @@ object NetUtil {
                 val send = DataOutputStream(socket.getOutputStream())
                 send.writeUTF("message")
                 send.writeUTF(MyData.username)
-                send.writeUTF(message)
+                send.writeUTF(content)
                 send.writeUTF("END")
-                //更新到数据库中去
-                DBUtil.DB.execSQL(
-                    "insert into msg values(?,?,?,?,?)",
-                    arrayOf(MyData.username, contactName, Msg.TYPE_SENT, message, DateUtil.getDate())
-                )
+                MyData.getTempMsgList(contactName)
+                    .addInsert(TimeMsg(contactName, Msg.TYPE_SENT, content, DateUtil.getDate()))
             } catch (e: IOException) {
                 e.printStackTrace()
             } finally {
@@ -371,19 +364,9 @@ object NetUtil {
                 //更新到数据库中去
                 ImageUtil.getBitmapFromUri(imageUri)?.let { bitmap ->
                     ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {
-                        DBUtil.DB.execSQL(
-                            "insert into msg values(?,?,?,?,?)",
-                            arrayOf(
-                                MyData.username,
-                                contactName,
-                                Msg.TYPE_IMAGE_SENT,
-                                it.toString(),
-                                DateUtil.getDate()
-                            )
-                        )
                         //添加到待更新聊天信息列表
                         MyData.getTempMsgList(contactName)
-                            .add(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
+                            .addInsert(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
                     }
                 }
             } catch (e: IOException) {
@@ -394,17 +377,43 @@ object NetUtil {
         }
     }
 
-    //接收到消息更新到ContactActivity
+    //处理待更新的数据，插入数据库，发送更新信息到ContactActivity
     fun updateTempMsg(contactMessenger: Messenger) {
         MyApplication.scope.launch(Dispatchers.IO) {
             val tempMsgMapName = MyData.tempMsgMapName
             while (true) {      //判断对应聊天对象是否有消息发送过来
                 if (MyData.tempMsgMapName != "" && MyData.getTempMsgList(MyData.tempMsgMapName).size > 0) {
+                    //遍历添加时间信息
+                    MyData.tempTimeMsgMap.forEach { (key, value) ->
+                        var i = 0
+                        while (i < value.size) {
+                            if (!MyData.msgTime.containsKey(key)) {      //第一次初始化时间戳
+                                MyData.msgTime[key] = DateUtil.parseDate(value[i].date)
+                                val timeMsg: TimeMsg             //待插入的时间戳
+                                with(value[i]) {
+                                    timeMsg = TimeMsg(contactName, Msg.TIME, DateUtil.noMillSec(date), DateUtil.minusSec(date))
+                                    value.addInsert(i, timeMsg)
+                                    i++
+                                }
+                            } else {    //判断是否与上次时间戳超过五分钟
+                                if ((DateUtil.parseDate(value[i].date).time - MyData.msgTime[key]!!.time) / 1000 > 1 * 60) {
+                                    MyData.msgTime[key] = DateUtil.parseDate(value[i].date)
+                                    val timeMsg: TimeMsg             //待插入的时间戳
+                                    with(value[i]) {
+                                        timeMsg = TimeMsg(contactName, Msg.TIME, DateUtil.noMillSec(date), DateUtil.minusSec(date))
+                                        value.addInsert(i, timeMsg)
+                                        i++
+                                    }
+                                }
+                            }
+                            i++
+                        }
+                    }
                     //更新contact UI
                     val msg = Message()
                     msg.what = ContactListActivity.updateRecyclerView
                     contactMessenger.send(msg)
-                }else
+                } else
                     delay(400)  //没有新消息时休眠400毫秒
                 if (tempMsgMapName != MyData.tempMsgMapName)    //判断是否仍在对应聊天对象的聊天界面
                     break
@@ -441,13 +450,17 @@ object NetUtil {
                 (i shr 24 and 0xFF)
     }
 
+    //okHttp get请求模板
+    private fun okHttpGet(urlTail: String): Response {
+        val request = Request.Builder().url(urlHead + urlTail).build()
+        return MyApplication.client.newCall(request).execute()
+    }
+
     //从服务器获取聊天用户
     fun searchInternet(contactListMessenger: Messenger) {
         MyApplication.scope.launch(Dispatchers.IO) {
             try {
-                val urlInfo = urlHead + "android/info?" + "name=${MyData.username}"
-                val request = Request.Builder().url(urlInfo).build()
-                val response = MyApplication.client.newCall(request).execute()
+                val response = okHttpGet("android/info?name=${MyData.username}")
                 val result = response.body?.string()
                 val type = object : TypeToken<List<Contact>>() {}.type
                 val contacts: List<Contact> = gson.fromJson(result, type)   //返回的json数据转换为联系人列表
@@ -464,12 +477,11 @@ object NetUtil {
                                     if (MyData.urlToUri.containsKey(contact.avatarUri) && MyData.urlToUri[contact.avatarUri] != "")
                                         contact.avatarUri = MyData.urlToUri[contact.avatarUri]!!
                                     else {    //如果没有保存过联系人对应的头像，当即保存并使用保存后的uri,uri插入数据库
-                                        val request1 = Request.Builder().url(urlHead + contact.avatarUri).build()
                                         LogUtil.e(tag, "访问的url: ${urlHead + contact.avatarUri}")
                                         //虚拟机下载图片要二十秒，但是真机下载非常快
                                         val starTime = System.currentTimeMillis()
-                                        val response1 = MyApplication.client.newCall(request1).execute()
-                                        LogUtil.e(tag,"下载头像用时:${(System.currentTimeMillis()-starTime)/1000}秒")
+                                        val response1 = okHttpGet(contact.avatarUri)
+                                        LogUtil.e(tag, "下载头像用时:${(System.currentTimeMillis() - starTime) / 1000}秒")
                                         val bitmap = BitmapFactory.decodeStream(response1.body?.byteStream())
                                         val avatarName = ImageUtil.getName()
                                         //把接收到的头像信息保存到本地相册，并更新contact数据库
@@ -505,9 +517,7 @@ object NetUtil {
     //从服务器登出
     fun logoutInternet() {
         thread {
-            val urlInfo = urlHead + "android/logout?name=${MyData.username}"
-            val request = Request.Builder().url(urlInfo).build()
-            MyApplication.client.newCall(request).execute()
+            okHttpGet("android/logout?name=${MyData.username}")
             LogUtil.d(tag, "从服务器退出：${MyData.username}")
         }
         Thread.sleep(200)   //等待请求完成
@@ -540,10 +550,8 @@ object NetUtil {
                 val request = Request.Builder().url(urlInfo).post(formBody).build()
                 val response = MyApplication.client.newCall(request).execute()
                 val result = response.body?.string()
-                DBUtil.DB.execSQL(
-                    "insert into msg values(?,?,?,?,?)",
-                    arrayOf(MyData.username, contactName, Msg.TYPE_SENT, content, DateUtil.getDate())
-                )
+                MyData.getTempMsgList(contactName)
+                    .addInsert(TimeMsg(contactName, Msg.TYPE_SENT, content, DateUtil.getDate()))
                 LogUtil.d(tag, "发送消息给服务器：${result.toString()}")
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -569,19 +577,9 @@ object NetUtil {
                     //保存图片到数据库
                     ImageUtil.getBitmapFromUri(uri)?.let { bitmap ->
                         ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {
-                            DBUtil.DB.execSQL(
-                                "insert into msg values(?,?,?,?,?)",
-                                arrayOf(
-                                    MyData.username,
-                                    contactName,
-                                    Msg.TYPE_IMAGE_SENT,
-                                    it.toString(),
-                                    DateUtil.getDate()
-                                )
-                            )
                             //添加到待更新聊天信息列表
                             MyData.getTempMsgList(contactName)
-                                .add(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
+                                .addInsert(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
                         }
                     }
                 }
@@ -598,13 +596,11 @@ object NetUtil {
                 isGetMessageInternet = true
                 while (true) {
                     try {
-                        val urlInfo = urlHead + "android/getMessage?" + "name=${MyData.username}"
-                        val request = Request.Builder().url(urlInfo).build()
-                        val response = MyApplication.client.newCall(request).execute()
+                        val response = okHttpGet("android/getMessage?name=${MyData.username}")
                         val result = response.body?.string() ?: ""
                         LogUtil.d(tag, "从服务器接收到的消息${result}")
                         if (result.length < 5) {  //长度小于五代表无任何新消息
-                            delay(2000)
+                            delay(1000)
                             continue
                         }
                         //获取联系人的消息
@@ -616,25 +612,17 @@ object NetUtil {
                             for (timeMsg: TimeMsg in value) {
                                 with(timeMsg) {
                                     when (this.type) {
-                                        Msg.TYPE_RECEIVED ->
-                                            DBUtil.DB.execSQL(
-                                                "insert into msg values(?,?,?,?,?)",
-                                                arrayOf(MyData.username, contactName, this.type, content, date)
-                                            )
+                                        Msg.TYPE_RECEIVED -> {
+                                        }
                                         Msg.TYPE_IMAGE_RECEIVED -> {      //发送的是图片，需要下载图片保存到本地
-                                            val request1 = Request.Builder().url(urlHead + timeMsg.content).build()
                                             LogUtil.e(tag, "下载的图片url: ${urlHead + timeMsg.content}")
                                             //虚拟机下载图片要二十秒，但是真机下载非常快
-                                            val response1 = MyApplication.client.newCall(request1).execute()
+                                            val response1 = okHttpGet(timeMsg.content)
                                             val bitmap = BitmapFactory.decodeStream(response1.body?.byteStream())
                                             val imageName = ImageUtil.getName()
-                                            //把接收到的图片保存到本地相册，并更新timeMsg数据库
+                                            //把接收到的图片保存到本地相册，修改content内容
                                             ImageUtil.saveBitmapToPicture(bitmap, imageName)?.let {
                                                 this.content = it.toString()
-                                                DBUtil.DB.execSQL(
-                                                    "INSERT INTO msg values(?,?,?,?,?)",
-                                                    arrayOf(MyData.username, contactName, this.type, content, date)
-                                                )
                                             }
                                         }
                                         else -> {
@@ -643,7 +631,7 @@ object NetUtil {
                                     }
                                 }
                             }
-                            MyData.getTempMsgList(key).addAll(value)
+                            MyData.getTempMsgList(key).addInsertAll(value)
                         }
                     } catch (e: Exception) {
                         //e.printStackTrace()

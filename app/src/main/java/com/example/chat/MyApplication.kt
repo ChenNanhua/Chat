@@ -16,10 +16,10 @@ class MyApplication : Application() {
         @SuppressLint("StaticFiledLeak")
         lateinit var context: Context
         val client = with(OkHttpClient.Builder()) {
-            connectTimeout(50, TimeUnit.SECONDS)
-            readTimeout(50, TimeUnit.SECONDS)
-            writeTimeout(50, TimeUnit.SECONDS)
-            connectionPool(ConnectionPool(32, 5, TimeUnit.MINUTES))
+            connectTimeout(25, TimeUnit.SECONDS)
+            readTimeout(25, TimeUnit.SECONDS)
+            writeTimeout(25, TimeUnit.SECONDS)
+            connectionPool(ConnectionPool(16, 5, TimeUnit.MINUTES))
         }.build()
         val job = Job()
         val scope = CoroutineScope(job)

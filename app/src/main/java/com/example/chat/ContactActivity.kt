@@ -7,6 +7,8 @@ import android.os.*
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
+import com.example.chat.chatUtil.TinyUtil.addInsert
+import com.example.chat.chatUtil.TinyUtil.loge
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
@@ -37,12 +39,7 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                         //依次取出消息显示在屏幕上
                         for (i in 0 until tempMsgList.size) {
                             with(tempMsgList[i]) {
-                                when (type) {
-                                    Msg.TYPE_SENT -> msgList.add(Msg(content, type))
-                                    Msg.TYPE_RECEIVED -> msgList.add(Msg(content, type))
-                                    Msg.TYPE_IMAGE_RECEIVED -> msgList.add(Msg(content, type))
-                                    Msg.TYPE_IMAGE_SENT -> msgList.add(Msg(content, type))
-                                }
+                                msgList.add(Msg(content, type))
                                 count++
                                 removeTempMsgList.add(this)
                             }
@@ -114,7 +111,6 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                 if (content.isEmpty())
                     return
                 inputText.setText("")
-                tempMsgList.add(TimeMsg(contact.name, Msg.TYPE_SENT, content, DateUtil.getDate()))
                 if (contact.isLocal)
                     NetUtil.sendMessageLocal(content, contact.name, contact.IP)
                 else

@@ -16,6 +16,8 @@ import kotlinx.android.synthetic.main.msg_left_item.view.*
 import kotlinx.android.synthetic.main.msg_left_item.view.msgLeftAvatar
 import kotlinx.android.synthetic.main.msg_right_item.view.*
 import kotlinx.android.synthetic.main.msg_right_item.view.msgRightAvatar
+import kotlinx.android.synthetic.main.msg_time.view.*
+import org.w3c.dom.Text
 import java.lang.Exception
 import java.lang.IllegalArgumentException
 
@@ -40,6 +42,10 @@ class ContactAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<Recy
         val msgLeftAvatar: ImageView = view.msgLeftAvatar
     }
 
+    inner class TimeViewHolder(view: View):RecyclerView.ViewHolder(view){
+        val msgTimeText:TextView = view.msgTimeText
+    }
+
     override fun getItemViewType(position: Int): Int {
         return msgList[position].type
     }
@@ -62,6 +68,10 @@ class ContactAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<Recy
                 val view = LayoutInflater.from(parent.context).inflate(R.layout.msg_image_right_item, parent, false)
                 RightImageViewHolder(view)
             }
+            Msg.TIME->{
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.msg_time, parent, false)
+                TimeViewHolder(view)
+            }
             else -> throw Exception("Msg.type不在四种之中")
         }
 
@@ -83,6 +93,9 @@ class ContactAdapter(private val msgList: List<Msg>) : RecyclerView.Adapter<Recy
             is RightImageViewHolder -> {
                 holder.msgRightImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(msg.content)))
                 holder.msgRightAvatar.setImageBitmap(MyData.myBitmap)
+            }
+            is TimeViewHolder->{
+                holder.msgTimeText.text = msg.content
             }
             else -> throw IllegalArgumentException()
         }

@@ -5,6 +5,7 @@ import android.net.Uri
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
+import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
@@ -17,12 +18,13 @@ object MyData {
     var myAvatarUri: Uri = Uri.parse("")
     var myBitmap: Bitmap =  ImageUtil.getBitmapFromResource()    //我的头像bitmap
     var contactBitmap: Bitmap = ImageUtil.getBitmapFromResource()    //聊天对象bitmap
+    var msgTime = HashMap<String,Date>()                //保存聊天对象上一条聊天的时间戳
 
     //所有聊天消息集合
     private val msgMap = HashMap<String, ArrayList<Msg>>()  //保存所有聊天对象的历史聊天记录
 
     //带时间的聊天信息，用于插入到数据库
-    private val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()  //保存新的、待展示到界面上的聊天记录
+    val tempTimeMsgMap = HashMap<String, ArrayList<TimeMsg>>()  //保存新的、待展示到界面上的聊天记录
 
     //判断聊天对象
     var tempMsgMapName = ""
