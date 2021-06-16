@@ -24,19 +24,18 @@ object DBUtil {
     }
 
     //更新数据库中的联系人信息
-    fun setAvatarContact(contactName: String, avatarUri: String, avatarName: String="") {
+    fun setAvatarContact(contactName: String, avatarUri: String, avatarName: String = "",isLocal: Boolean = true) {
         try {
             DB.execSQL(
                 "insert into contact(contactName,avatarUri,avatarName) values(?,?,?)",
                 arrayOf(contactName, avatarUri, avatarName)
             )
         } catch (e: Exception) {
-            LogUtil.d(tag, "数据库contact插入了重复数据")
+            LogUtil.d(tag, "数据库contact插入了重复数据，改为更新数据")
             DB.execSQL(
-                "update contact set avatarUri = ?,avatarName = ? where contactName = ?",
-                arrayOf(avatarUri, avatarName, contactName)
+                "update contact set avatarUri = ?,avatarName = ?,isLocal=? where contactName = ?",
+                arrayOf(avatarUri, avatarName,isLocal,contactName)
             )
-            LogUtil.d(tag, "改为更新数据")
         }
         MyData.savedContact[contactName] = Contact(contactName, "0.0.0.0", avatarUri)
     }

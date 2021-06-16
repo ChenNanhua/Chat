@@ -17,7 +17,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/message_left"
+        android:background="@drawable/msg_left"
         android:layout_marginTop="15dp"
         app:layout_constraintLeft_toRightOf="@id/msgLeftAvatar"
         app:layout_constraintTop_toTopOf="@id/msgLeftAvatar"

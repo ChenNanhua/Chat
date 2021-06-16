@@ -38,4 +38,5 @@
     <string name="noAnything"> </string>
     <string name="updateName">修改名字</string>
     <string name="swipeRefresh_behavior">swipeRefresh_behavior</string>
+    <string name="PhotoAlbum">相册</string>
 </resources>

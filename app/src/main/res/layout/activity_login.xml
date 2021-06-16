@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorPrimary"
     tools:context=".LoginActivity">
 
     <TextView
@@ -12,6 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="3dp"
         android:text="@string/welcome_login"
+        android:textColor="@color/boldTextColor"
         android:textSize="22sp"
         app:layout_constraintBottom_toTopOf="@id/editName"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -26,7 +28,7 @@
         android:layout_margin="3dp"
         android:autofillHints="username"
         android:hint="@string/username"
-        android:inputType="number"
+        android:inputType="text"
         app:layout_constraintBottom_toTopOf="@id/editPassword"
         app:layout_constraintHeight_percent="0.07"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -82,37 +84,27 @@
         android:id="@+id/buttonLogin"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_margin="3dp"
+        android:layout_marginBottom="6dp"
+        android:onClick="onClick"
         android:text="@string/login"
-        app:layout_constraintBottom_toTopOf="@id/buttonQuit"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHeight_percent="0.07"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/autoLogin"
         app:layout_constraintWidth_percent="0.5" />
 
-    <Button
-        android:id="@+id/buttonQuit"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="@string/quit"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHeight_percent="0.07"
-        app:layout_constraintLeft_toRightOf="@+id/buttonRegister"
-        app:layout_constraintRight_toRightOf="@id/buttonLogin"
-        app:layout_constraintTop_toBottomOf="@id/buttonLogin"
-        app:layout_constraintWidth_percent="0.2" />
 
-    <Button
+    <TextView
         android:id="@+id/buttonRegister"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:onClick="onClick"
         android:text="@string/register"
-        app:layout_constraintBottom_toBottomOf="@id/buttonQuit"
-        app:layout_constraintHeight_percent="0.07"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_chainStyle="spread_inside"
-        app:layout_constraintLeft_toLeftOf="@id/buttonLogin"
-        app:layout_constraintRight_toLeftOf="@+id/buttonQuit"
-        app:layout_constraintTop_toTopOf="@+id/buttonQuit"
-        app:layout_constraintWidth_percent="0.2" />
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -26,10 +26,6 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         sharedEdit = getSharedPreferences("data", Context.MODE_PRIVATE).edit()
         sharedEdit.apply()
         shared = getSharedPreferences("data", Context.MODE_PRIVATE)
-        //给按钮设置监听事件
-        buttonLogin.setOnClickListener(this)
-        buttonRegister.setOnClickListener(this)
-        buttonQuit.setOnClickListener(this)
 
         //动态申请权限
         ActivityCompat.requestPermissions(
@@ -67,6 +63,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
             //Toast.makeText(this, "Permission GET", Toast.LENGTH_SHORT).show()
         } else {    //获取权限失败
             "请授予必要权限...".toast()
+            finish()
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
@@ -110,9 +107,6 @@ class LoginActivity : MyActivity(), View.OnClickListener {
             }
             R.id.buttonRegister -> {     //跳转到注册逻辑
                 startActivityForResult(Intent(this, RegisterActivity::class.java), 1)
-            }
-            R.id.buttonQuit -> {        //退出
-                finish()
             }
         }
     }

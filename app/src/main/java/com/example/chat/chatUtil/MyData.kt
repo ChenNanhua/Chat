@@ -2,6 +2,7 @@ package com.example.chat.chatUtil
 
 import android.graphics.Bitmap
 import android.net.Uri
+import com.example.chat.chatUtil.TinyUtil.loge
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
@@ -16,9 +17,9 @@ object MyData {
     //个人信息
     var username = ""   //我的名字
     var myAvatarUri: Uri = Uri.parse("")
-    var myBitmap: Bitmap =  ImageUtil.getBitmapFromResource()    //我的头像bitmap
+    var myBitmap: Bitmap = ImageUtil.getBitmapFromResource()    //我的头像bitmap
     var contactBitmap: Bitmap = ImageUtil.getBitmapFromResource()    //聊天对象bitmap
-    var msgTime = HashMap<String,Date>()                //保存聊天对象上一条聊天的时间戳
+    var msgTime = HashMap<String, Date>()                //保存聊天对象上一条聊天的时间戳
 
     //所有聊天消息集合
     private val msgMap = HashMap<String, ArrayList<Msg>>()  //保存所有聊天对象的历史聊天记录
@@ -47,11 +48,13 @@ object MyData {
                     do {
                         with(it) {
                             //姓名下标0，Uri下标1,
-                            savedContact[getString(0)] = Contact(getString(0), "0.0.0.0", getString(1))
+                            savedContact[getString(0)] =
+                                Contact(getString(0), "0.0.0.0", getString(1), false, getString(3)!!.toBoolean())
                         }
                     } while (it.moveToNext())
                 }
             }
+            "savedContact：$savedContact".loge()
         }
     }
 

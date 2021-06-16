@@ -45,6 +45,8 @@ object ImageUtil {
 
     //保存bitmap到相册(适配安卓11)
     fun saveBitmapToPicture(bitmap: Bitmap, name: String, type: String = "image/jpeg"): Uri? {
+        if (bitmap== null)
+            return null
         val imageTime = System.currentTimeMillis()
         val resolver = MyApplication.context.contentResolver
         val contentValues = ContentValues().apply {

@@ -17,7 +17,8 @@ class MyDBHelper(name: String = "chat.db", version: Int = 1) :
     private val createContact = "create table contact(" +
             "contactName varchar(20) unique," +
             "avatarUri varchar(70)," +
-            "avatarName varchar(60))"
+            "avatarName varchar(60)," +
+            "isLocal varchar(5))"
     //消息记录
     private val createMsg = "create table msg(" +
             "username varchar(20)," +

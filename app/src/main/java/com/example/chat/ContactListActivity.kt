@@ -53,8 +53,9 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         val navHeader = nav.getHeaderView(0)
         val navAvatar: ImageView = navHeader.findViewById(R.id.navAvatar)
         val navName: TextView = navHeader.findViewById(R.id.navName)
+        //toolbar设置头像，姓名，nav设置头像，姓名
+        contactListToolbarName.text = MyData.username
         navName.text = MyData.username
-        //toolbar设置头像，nav设置头像
         if (MyData.myAvatarUri.toString() != "")
             ImageUtil.getBitmapFromUri(MyData.myAvatarUri)?.let {
                 contactListToolbarImageView.setImageBitmap(it)
@@ -67,7 +68,7 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         //toolbar设置最左侧导航
         supportActionBar?.let {
             it.setDisplayHomeAsUpEnabled(true)
-            it.setHomeAsUpIndicator(R.mipmap.ic_menu)
+            it.setHomeAsUpIndicator(R.drawable.ic_dehaze_24)
         }
         //SwipeRefreshLayout的刷新逻辑
         swipeRefresh.setColorSchemeResources(R.color.colorAccent)

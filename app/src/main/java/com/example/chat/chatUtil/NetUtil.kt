@@ -391,7 +391,12 @@ object NetUtil {
                                 MyData.msgTime[key] = DateUtil.parseDate(value[i].date)
                                 val timeMsg: TimeMsg             //待插入的时间戳
                                 with(value[i]) {
-                                    timeMsg = TimeMsg(contactName, Msg.TIME, DateUtil.noMillSec(date), DateUtil.minusSec(date))
+                                    timeMsg = TimeMsg(
+                                        contactName,
+                                        Msg.TIME,
+                                        DateUtil.noMillSec(date),
+                                        DateUtil.minusSec(date)
+                                    )
                                     value.addInsert(i, timeMsg)
                                     i++
                                 }
@@ -400,7 +405,12 @@ object NetUtil {
                                     MyData.msgTime[key] = DateUtil.parseDate(value[i].date)
                                     val timeMsg: TimeMsg             //待插入的时间戳
                                     with(value[i]) {
-                                        timeMsg = TimeMsg(contactName, Msg.TIME, DateUtil.noMillSec(date), DateUtil.minusSec(date))
+                                        timeMsg = TimeMsg(
+                                            contactName,
+                                            Msg.TIME,
+                                            DateUtil.noMillSec(date),
+                                            DateUtil.minusSec(date)
+                                        )
                                         value.addInsert(i, timeMsg)
                                         i++
                                     }
@@ -471,6 +481,7 @@ object NetUtil {
                             withContext(Dispatchers.IO) Return@{
                                 if (contact.name == MyData.username)    //排除自己账号
                                     return@Return
+                                var avatarName = ""
                                 if (contact.avatarUri != "") {      //头像链接不为空，获取头像数据
                                     LogUtil.e(tag, "urlToUri内容：${MyData.urlToUri}")
                                     //如果保存过联系人对应的头像，且头像不为空，直接使用本地uri
@@ -483,21 +494,23 @@ object NetUtil {
                                         val response1 = okHttpGet(contact.avatarUri)
                                         LogUtil.e(tag, "下载头像用时:${(System.currentTimeMillis() - starTime) / 1000}秒")
                                         val bitmap = BitmapFactory.decodeStream(response1.body?.byteStream())
-                                        val avatarName = ImageUtil.getName()
+                                        avatarName = ImageUtil.getName()
                                         //把接收到的头像信息保存到本地相册，并更新contact数据库
-                                        ImageUtil.saveBitmapToPicture(bitmap, avatarName)?.run {
-                                            DBUtil.setAvatarContact(contact.name, this.toString(), avatarName)
-                                            //更新uriToUri数据库
-                                            DBUtil.DB.execSQL(
-                                                "INSERT INTO urlToUri values(?,?)",
-                                                arrayOf(contact.avatarUri, this.toString())
-                                            )
-                                            contact.avatarUri = this.toString()
-                                        }
+                                        if (bitmap != null) {
+                                            ImageUtil.saveBitmapToPicture(bitmap, avatarName)?.run {
+                                                //更新uriToUri数据库
+                                                DBUtil.DB.execSQL(
+                                                    "INSERT INTO urlToUri values(?,?)",
+                                                    arrayOf(contact.avatarUri, this.toString())
+                                                )
+                                                contact.avatarUri = this.toString()
+                                            }
+                                        } else
+                                            contact.avatarUri = ""      //下载头像失败,avatarUri重置回去
                                     }
                                 }
-                                //无论有没有头像都要添加到历史联系人数据库
-                                DBUtil.setAvatarContact(contact.name, contact.avatarUri)
+                                //统一添加联系人到数据库
+                                DBUtil.setAvatarContact(contact.name, contact.avatarUri, isLocal = false)
                                 addContact(contact)
                             }
                         }

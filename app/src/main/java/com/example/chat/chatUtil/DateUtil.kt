@@ -3,7 +3,6 @@ package com.example.chat.chatUtil
 import android.annotation.SuppressLint
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 object DateUtil {
     @SuppressLint("SimpleDateFormat")

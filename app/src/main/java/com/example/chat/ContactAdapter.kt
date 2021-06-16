@@ -17,7 +17,6 @@ import kotlinx.android.synthetic.main.msg_left_item.view.msgLeftAvatar
 import kotlinx.android.synthetic.main.msg_right_item.view.*
 import kotlinx.android.synthetic.main.msg_right_item.view.msgRightAvatar
 import kotlinx.android.synthetic.main.msg_time.view.*
-import org.w3c.dom.Text
 import java.lang.Exception
 import java.lang.IllegalArgumentException
 

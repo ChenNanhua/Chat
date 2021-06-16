@@ -87,8 +87,6 @@ class ContactActivity : MyActivity(), View.OnClickListener {
         contactRecycleView.adapter = ContactAdapter(msgList)
         contactRecycleView.layoutManager = LinearLayoutManager(this)
         contactRecycleView.scrollToPosition(msgList.size - 1)
-        sendMessage.setOnClickListener(this)
-        choseImage.setOnClickListener(this)
 
         //后台更新聊天记录
         MyData.tempMsgMapName = contact.name

@@ -14,9 +14,6 @@ class RegisterActivity : MyActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
-
-        buttonRegister.setOnClickListener(this)
-        buttonQuit.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -53,9 +50,6 @@ class RegisterActivity : MyActivity(), View.OnClickListener {
                         e.printStackTrace()
                     }
                 }
-            }
-            R.id.buttonQuit -> {     //退出
-                finish()
             }
         }
     }
