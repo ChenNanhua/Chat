@@ -27,8 +27,8 @@ object DBUtil {
     fun setAvatarContact(contactName: String, avatarUri: String, avatarName: String = "",isLocal: Boolean = true) {
         try {
             DB.execSQL(
-                "insert into contact(contactName,avatarUri,avatarName) values(?,?,?)",
-                arrayOf(contactName, avatarUri, avatarName)
+                "insert into contact(contactName,avatarUri,avatarName,isLocal) values(?,?,?,?)",
+                arrayOf(contactName, avatarUri, avatarName,isLocal)
             )
         } catch (e: Exception) {
             LogUtil.d(tag, "数据库contact插入了重复数据，改为更新数据")

@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/updateName"
-            android:title="@string/updateName"
+            android:id="@+id/useLocal"
+            android:title="@string/localOff"
             android:icon="@mipmap/ic_done"/>
     </group>
 </menu>

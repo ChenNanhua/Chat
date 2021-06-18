@@ -6,14 +6,12 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Message
 import android.os.Messenger
-import android.text.format.Time
 import androidx.core.content.ContextCompat.getSystemService
 import com.example.chat.ContactListActivity
 import com.example.chat.MyApplication
 import com.example.chat.chatUtil.*
 import com.example.chat.chatUtil.TinyUtil.addInsert
 import com.example.chat.chatUtil.TinyUtil.addInsertAll
-import com.example.chat.chatUtil.TinyUtil.loge
 import com.example.chat.chatUtil.TinyUtil.toast
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
@@ -28,6 +26,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.*
 import java.net.*
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
@@ -162,6 +161,8 @@ object NetUtil {
 
     //局域网创建服务器，接收客户端的连接请求
     fun startServerLocal(contactListMessenger: Messenger) {  //接收发来的消息
+        if (!MyApplication.useLocal)        //判断是否打开了局域网搜索
+            return
         MyApplication.scope.launch(Dispatchers.IO) {
             try {
                 serverSocket = ServerSocket(port)
@@ -189,6 +190,8 @@ object NetUtil {
 
     //在局域网中发起连接请求，搜索其他用户
     fun searchLocal(contactListMessenger: Messenger) {
+        if (!MyApplication.useLocal)
+            return
         var myIP = getIp()       //获取本机IP
         myIP = "172.16.0.1"      //TODO 蒲公英组网时所用，最后应删去
         LogUtil.d(tag, "客户端正在搜寻,客户端IP: $myIP")
@@ -362,13 +365,8 @@ object NetUtil {
                 sendImageLocal(socket, imageUri)
                 send.writeUTF("END")
                 //更新到数据库中去
-                ImageUtil.getBitmapFromUri(imageUri)?.let { bitmap ->
-                    ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {
-                        //添加到待更新聊天信息列表
-                        MyData.getTempMsgList(contactName)
-                            .addInsert(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
-                    }
-                }
+                MyData.getTempMsgList(contactName)
+                    .addInsert(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, imageUri.toString()))
             } catch (e: IOException) {
                 e.printStackTrace()
             } finally {
@@ -431,6 +429,43 @@ object NetUtil {
         }
     }
 
+    //更新联系人界面的新消息红点
+    fun updateRedCircle(contactListMessenger: Messenger) {
+        MyApplication.scope.launch(Dispatchers.IO) {
+            while (MyData.redCircle) {
+                var update = false
+                val updateList = ArrayList<Int>(MyData.contactList.size)
+                //有新消息就设置红点
+                for (i in 0 until MyData.contactList.size)
+                    with(MyData.contactList[i]) {
+                        if (MyData.tempTimeMsgMap.containsKey(this.name)) {
+                            //如果有联系人信息，且没设为红点，设为红点
+                            if (MyData.tempTimeMsgMap[this.name]!!.size > 0) {
+                                if (!MyData.contactList[i].isRedCircle) {
+                                    this.isRedCircle = true
+                                    updateList.add(i)
+                                    update = true
+                                }
+                            } else    //如果没联系人信息，但联系人为红点，设置回红点
+                                if (this.isRedCircle) {
+                                    this.isRedCircle = false
+                                    updateList.add(i)
+                                    update = true
+                                }
+                        }
+                    }
+                if (update) {
+                    //更新contact UI
+                    val msg = Message()
+                    msg.obj = updateList
+                    msg.what = ContactListActivity.updateRedCircle
+                    contactListMessenger.send(msg)
+                } else
+                    delay(400)
+            }
+        }
+    }
+
     //为多线程提供的锁
     @Synchronized
     private fun addContact(contact: Contact) {
@@ -481,7 +516,7 @@ object NetUtil {
                             withContext(Dispatchers.IO) Return@{
                                 if (contact.name == MyData.username)    //排除自己账号
                                     return@Return
-                                var avatarName = ""
+                                val avatarName: String              //储存保存到本地的图片名
                                 if (contact.avatarUri != "") {      //头像链接不为空，获取头像数据
                                     LogUtil.e(tag, "urlToUri内容：${MyData.urlToUri}")
                                     //如果保存过联系人对应的头像，且头像不为空，直接使用本地uri
@@ -587,14 +622,9 @@ object NetUtil {
                     val response = MyApplication.client.newCall(request).execute()
                     val result = response.body?.string()
                     LogUtil.d(tag, "发送图片到服务器：${uri}，服务器url：$result")
-                    //保存图片到数据库
-                    ImageUtil.getBitmapFromUri(uri)?.let { bitmap ->
-                        ImageUtil.saveBitmapToPicture(bitmap, ImageUtil.getName())?.let {
-                            //添加到待更新聊天信息列表
-                            MyData.getTempMsgList(contactName)
-                                .addInsert(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, it.toString()))
-                        }
-                    }
+                    //保存图片Uri到数据库,添加到待更新聊天信息列表
+                    MyData.getTempMsgList(contactName)
+                        .addInsert(TimeMsg(contactName, Msg.TYPE_IMAGE_SENT, uri.toString()))
                 }
             } catch (e: java.lang.Exception) {
                 e.printStackTrace()

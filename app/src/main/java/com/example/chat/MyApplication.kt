@@ -15,6 +15,7 @@ class MyApplication : Application() {
     companion object {
         @SuppressLint("StaticFiledLeak")
         lateinit var context: Context
+        var useLocal = false
         val client = with(OkHttpClient.Builder()) {
             connectTimeout(25, TimeUnit.SECONDS)
             readTimeout(25, TimeUnit.SECONDS)

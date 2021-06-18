@@ -59,7 +59,7 @@
         android:layout_marginBottom="9dp"
         android:text="@string/auto_login"
         android:textSize="12sp"
-        app:layout_constraintBottom_toTopOf="@id/buttonLogin"
+        app:layout_constraintBottom_toTopOf="@id/login"
         app:layout_constraintHeight_percent="0.04"
         app:layout_constraintHorizontal_chainStyle="spread_inside"
         app:layout_constraintLeft_toLeftOf="@id/editPassword"
@@ -81,7 +81,7 @@
         app:layout_constraintWidth_percent="0.22" />
 
     <Button
-        android:id="@+id/buttonLogin"
+        android:id="@+id/login"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="6dp"
@@ -97,7 +97,7 @@
 
 
     <TextView
-        android:id="@+id/buttonRegister"
+        android:id="@+id/register"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"

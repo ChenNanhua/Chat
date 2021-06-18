@@ -11,12 +11,12 @@ class MyDBHelper(name: String = "chat.db", version: Int = 1) :
             "username varchar(20) unique," +
             "passwordMd5 char(32)," +
             "remember integer," +
-            "avatarUri varchar(70)," +
+            "avatarUri varchar(100)," +
             "avatarName varchar(60))"
     //联系人信息
     private val createContact = "create table contact(" +
             "contactName varchar(20) unique," +
-            "avatarUri varchar(70)," +
+            "avatarUri varchar(100)," +
             "avatarName varchar(60)," +
             "isLocal varchar(5))"
     //消息记录
@@ -29,7 +29,7 @@ class MyDBHelper(name: String = "chat.db", version: Int = 1) :
     //服务器Url对应本地Uri
     private val createUrlToUri= "create table urlToUri("+
             "url varchar(70),"+
-            "avatarUri varchar(70))"
+            "avatarUri varchar(100))"
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.run {

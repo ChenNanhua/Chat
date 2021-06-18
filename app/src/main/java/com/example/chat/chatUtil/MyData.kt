@@ -29,6 +29,8 @@ object MyData {
 
     //判断聊天对象
     var tempMsgMapName = ""
+    //判断是否需要更新redCircle
+    var redCircle = false
 
     //保存查询到的所有打开对应port的用户IP,Uri
     @Volatile
@@ -36,7 +38,8 @@ object MyData {
 
     //已保存过的联系人
     val savedContact: HashMap<String, Contact> = HashMap()
-
+    //保存在线的联系人
+    val contactList = ArrayList<Contact>()
     //服务器Url对应的本地Uri
     val urlToUri: HashMap<String, String> = HashMap()
 

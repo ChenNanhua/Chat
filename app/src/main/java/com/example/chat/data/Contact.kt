@@ -7,5 +7,6 @@ data class Contact(
     val IP: String,
     var avatarUri: String,
     val isOnline: Boolean = false,
-    val isLocal: Boolean = true
+    val isLocal: Boolean = true,
+    var isRedCircle:Boolean = false
 ) : Serializable

@@ -9,10 +9,10 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
+import com.example.chat.chatUtil.*
 import com.example.chat.chatUtil.DBUtil.DB
-import com.example.chat.chatUtil.MyData
-import com.example.chat.chatUtil.HashUtil
 import com.example.chat.chatUtil.TinyUtil.toast
 import kotlinx.android.synthetic.main.activity_login.*
 
@@ -31,7 +31,8 @@ class LoginActivity : MyActivity(), View.OnClickListener {
         ActivityCompat.requestPermissions(
             this, arrayOf(
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.MANAGE_EXTERNAL_STORAGE
             ), 1
         )
 
@@ -70,7 +71,7 @@ class LoginActivity : MyActivity(), View.OnClickListener {
 
     override fun onClick(v: View?) {
         when (v?.id) {
-            R.id.buttonLogin -> {    //登录逻辑
+            R.id.login -> {    //登录逻辑
                 val username = editName.text.toString()     //与数据库中保存的账号信息比对
                 val password = editPassword.text.toString()
                 val passwordMd5 = HashUtil.md5(password)
@@ -105,19 +106,18 @@ class LoginActivity : MyActivity(), View.OnClickListener {
                     }
                 }
             }
-            R.id.buttonRegister -> {     //跳转到注册逻辑
-                startActivityForResult(Intent(this, RegisterActivity::class.java), 1)
+            R.id.register -> {     //跳转到注册逻辑
+                startRegister.launch(Intent(this, RegisterActivity::class.java))
             }
         }
     }
 
     //获取RegisterActivity返回的用户名和密码
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            1 -> if (resultCode == Activity.RESULT_OK) {
-                editName.setText(data?.getStringExtra("username"))
-                editPassword.setText((data?.getStringExtra("password")))
+    private val startRegister = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            result.data!!.let { data ->
+                editName.setText(data.getStringExtra("username"))
+                editPassword.setText((data.getStringExtra("password")))
             }
         }
     }

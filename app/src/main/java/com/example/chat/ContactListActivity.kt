@@ -1,30 +1,34 @@
 package com.example.chat
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.*
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
 import com.example.chat.chatUtil.TinyUtil.toast
-import com.example.chat.data.Contact
 import kotlinx.android.synthetic.main.activity_contact_list.*
 import kotlinx.android.synthetic.main.activity_contact_list.contactToolbar
 import kotlin.collections.ArrayList
 
 
 class ContactListActivity : MyActivity(), View.OnClickListener {
-    private val contactList = ArrayList<Contact>()
-
     companion object {
         const val updateRecyclerView = 1
+        const val updateRedCircle = 2
     }
+
+    val adapter: ContactListAdapter = ContactListAdapter(MyData.contactList)
+    private lateinit var testUri: Uri
 
     //更新联系人列表
     private val handler = object : Handler(Looper.myLooper()!!) {
@@ -35,6 +39,11 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
                     swipeRefresh.isRefreshing = false   //刷新完成
                     MyData.initMsgMap()     //更新联系人的历史消息
                 }
+                updateRedCircle -> {
+                    for (index in msg.obj as ArrayList<*>)
+                        adapter.notifyItemChanged(index as Int)
+                    contactListRecycleView.scrollToPosition(MyData.contactList.size - 1)
+                }
             }
         }
     }
@@ -44,15 +53,12 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact_list)
         setSupportActionBar(contactToolbar)
-        //nav设置点击监听,点击后退出nav
-        nav.setNavigationItemSelectedListener {
-            drawerLayout.closeDrawers()
-            true
-        }
+
         //获取nav的header,并设置属性
         val navHeader = nav.getHeaderView(0)
         val navAvatar: ImageView = navHeader.findViewById(R.id.navAvatar)
         val navName: TextView = navHeader.findViewById(R.id.navName)
+
         //toolbar设置头像，姓名，nav设置头像，姓名
         contactListToolbarName.text = MyData.username
         navName.text = MyData.username
@@ -65,6 +71,13 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
             contactListToolbarImageView.setImageResource(R.drawable.none)
             navAvatar.setImageResource(R.drawable.none)
         }
+
+        //nav的menu添加点击响应,统一放到onOptionsItemSelected
+        nav.setNavigationItemSelectedListener {
+            onOptionsItemSelected(it)
+            false
+        }
+
         //toolbar设置最左侧导航
         supportActionBar?.let {
             it.setDisplayHomeAsUpEnabled(true)
@@ -80,6 +93,15 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         //初始化服务器Url对应的本地Uri
         MyData.initUrlToUri()
         startService()
+
+        //更新红点
+        MyData.redCircle = true
+        NetUtil.updateRedCircle(contactListMessenger)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        MyData.redCircle = false
     }
 
     //开启搜索用户的服务
@@ -93,9 +115,10 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         when (v) {
             contactListToolbarImageView -> {
                 //打开相册,选择要作为头像的图片
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                intent.type = "image/*"
-                startActivityForResult(intent, 2)
+                with(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)){
+                    type = "image/*"
+                    setAvatar.launch(this)
+                }
             }
         }
     }
@@ -107,19 +130,56 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
     }
 
     //menu菜单添加响应
+    @SuppressLint("InflateParams")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             //toolbar左侧导航按钮
             android.R.id.home -> drawerLayout.openDrawer(GravityCompat.START)
 
+            //nav修改名字
+            R.id.useLocal -> {
+                if (MyApplication.useLocal) {
+                    MyApplication.useLocal = false
+                    nav.menu.findItem(R.id.useLocal).title = "已关闭局域网"
+                    "已关闭局域网".toast()
+                } else {
+                    MyApplication.useLocal = true
+                    startService()
+                    nav.menu.findItem(R.id.useLocal).title = "已开启局域网"
+                    "已开启局域网".toast()
+                }
+            }
+            /*with(AlertDialog.Builder(this)) {
+                setTitle("输入新名字")
+                setMessage("你将会成为另一个人")
+                val view = LayoutInflater.from(MyApplication.context).inflate(R.layout.edit_text, null)
+                val editText = view.findViewById<EditText>(R.id.editText)
+                setView(view)
+                setCancelable(true)
+                setPositiveButton("是") { _, _ ->
+                    val newName = editText.text.toString()
+                    "修改为：${editText.text}".toast()
+                    DBUtil.DB.execSQL(
+                        "update user set username=? where username = ?",
+                        arrayOf(newName, MyData.username)
+                    )
+                    MyData.username = newName
+                    //重启Activity
+                    finish()
+                    startActivity(Intent(MyApplication.context, ContactListActivity::class.java))
+                }
+                setNegativeButton("否") { _, _ -> }
+            }.show()*/
+
             R.id.setAvatar -> {    //打开相册,选择要作为头像的图片
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                intent.type = "image/*"
-                startActivityForResult(intent, 2)
+                with(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)){
+                    type = "image/*"
+                    setAvatar.launch(this)
+                }
             }
 
             //删除所有聊天数据
-            R.id.clear -> {
+            R.id.clear ->
                 with(AlertDialog.Builder(this)) {
                     setTitle("是否删除所有聊天数据")
                     setMessage("操作不可逆，三思而后行")
@@ -132,10 +192,10 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
                             execSQL("delete from user")
                             "清除数据完成".toast()
                         }
+                        finish()
                     }
                     setNegativeButton("否") { _, _ -> }
                 }.show()
-            }
 
             //开启搜索用户的服务
             R.id.searchContact -> {
@@ -145,37 +205,30 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
             R.id.logout -> {
                 with(Intent(this, LoginActivity::class.java)) {
                     this.putExtra("NoAutoLogin", "NoAutoLogin")
-                    startActivity(this)
                     finish()
+                    startActivity(this)
                 }
             }
 
             R.id.test -> {
-                DBUtil.DB.execSQL("DELETE FROM urlToUri")
-                "DELETE FROM urlToUri".toast()
+                contactListToolbarImageView.setImageBitmap(ImageUtil.getBitmapFromUri(testUri))
             }
         }
         return true
     }
 
-    //打开其他activity后回调结果
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            2 -> {
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    data.data?.let {
-                        LogUtil.d(tag, "选取的照片Uri:$it")
-                        ImageUtil.getBitmapFromUri(it)?.let { bitmap ->
-                            //标题栏设置头像，随机生成保存头像的文件名
-                            contactListToolbarImageView.setImageBitmap(bitmap)
-                            val name = ImageUtil.getName()
-                            //保存图片到本app文件夹下
-                            ImageUtil.saveBitmapToPicture(bitmap, name)?.let { saveUri ->
-                                DBUtil.setAvatarUser(MyData.username, saveUri, name)
-                            }
-                        }
-                    }
+    //打开其他相册处理选择的Uri
+    private val setAvatar = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            result.data!!.data?.let {
+                LogUtil.d(tag, "选取的照片Uri:$it")
+                val uri = ImageUtil.getExternalUriFromUri(it)
+                ImageUtil.getBitmapFromUri(uri)?.let { bitmap ->
+                    //标题栏设置头像，保存头像Uri
+                    contactListToolbarImageView.setImageBitmap(bitmap)
+                    DBUtil.setAvatarUser(
+                        MyData.username, uri, ""
+                    )
                 }
             }
         }
@@ -184,8 +237,8 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
     //更新联系人列表
     private fun initContact() {
         LogUtil.d(tag, "更新联系人列表")
-        contactList.clear()     //清空以往保存的联系人信息
-        with(contactList) {
+        MyData.contactList.clear()     //清空以往保存的联系人信息
+        with(MyData.contactList) {
             //先添加历史聊天对象，再添加新发现的聊天对象
             MyData.savedContact.forEach {
                 if (MyData.onlineContact.containsKey(it.key)) {
@@ -201,6 +254,6 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         }
         //contactListRecycleView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         contactListRecycleView.layoutManager = LinearLayoutManager(this)
-        contactListRecycleView.adapter = ContactListAdapter(contactList)
+        contactListRecycleView.adapter = adapter
     }
 }

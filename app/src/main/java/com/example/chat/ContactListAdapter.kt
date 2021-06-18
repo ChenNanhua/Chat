@@ -2,6 +2,7 @@ package com.example.chat
 
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -22,6 +23,7 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         val contactIP: TextView = view.contactIP
         val contactOnline: TextView = view.contactOnline
         val contactAddress: TextView = view.contactAddress
+        val redCircle:View = view.red_circle
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -59,6 +61,11 @@ class ContactListAdapter(private val contactList: List<Contact>) :
             holder.contactAddress.text = MyApplication.context.resources.getText(R.string.local)
         else
             holder.contactAddress.text = MyApplication.context.resources.getText(R.string.internet)
+        if (contact.isRedCircle)        //设置小红点
+            holder.redCircle.background = MyApplication.context.getDrawable(R.drawable.red_circle)
+        else
+            holder.redCircle.background = MyApplication.context.getDrawable(R.drawable.primary_circle)
+
     }
 
     override fun getItemCount(): Int = contactList.size

@@ -36,7 +36,8 @@
     <string name="online">online</string>
     <string name="offline">offline</string>
     <string name="noAnything"> </string>
-    <string name="updateName">修改名字</string>
+    <string name="localOff">已关闭局域网</string>
+    <string name="localOn">已打开局域网</string>
     <string name="swipeRefresh_behavior">swipeRefresh_behavior</string>
     <string name="PhotoAlbum">相册</string>
 </resources>

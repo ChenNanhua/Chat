@@ -5,10 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.*
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chat.chatUtil.*
-import com.example.chat.chatUtil.TinyUtil.addInsert
-import com.example.chat.chatUtil.TinyUtil.loge
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
 import com.example.chat.data.TimeMsg
@@ -115,27 +114,24 @@ class ContactActivity : MyActivity(), View.OnClickListener {
                     NetUtil.sendMessageInternet(contact.name, content)
             }
             choseImage -> {     //打开相册,选择要发送的的图片
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                intent.type = "image/*"
-                startActivityForResult(intent, 2)
+                with(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)){
+                    type = "image/*"
+                    sendImage.launch(this)
+                }
             }
         }
     }
 
-    //打开其他activity后回调结果
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            2 -> {
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    data.data?.let {
-                        if (contact.isLocal)
-                            NetUtil.sendSingleImageLocal(it, contact.name, contact.IP)
-                        else
-                            NetUtil.sendSingleImageInternet(it, contact.name)
-                        LogUtil.d(tag, "选取的照片Uri:$it")
-                    }
-                }
+    //打开相册处理选择的Uri
+    private val sendImage = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            result.data!!.data?.let {
+                val uri = ImageUtil.getExternalUriFromUri(it)
+                if (contact.isLocal)
+                    NetUtil.sendSingleImageLocal(uri, contact.name, contact.IP)
+                else
+                    NetUtil.sendSingleImageInternet(uri, contact.name)
+                LogUtil.d(tag, "选取的照片Uri:$it")
             }
         }
     }
