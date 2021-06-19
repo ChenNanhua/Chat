@@ -2,7 +2,6 @@ package com.example.chat
 
 
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -23,7 +22,7 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         val contactIP: TextView = view.contactIP
         val contactOnline: TextView = view.contactOnline
         val contactAddress: TextView = view.contactAddress
-        val redCircle:View = view.red_circle
+        val redCircle: View = view.red_circle
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -50,10 +49,10 @@ class ContactListAdapter(private val contactList: List<Contact>) :
             holder.contactImage.setImageResource(R.drawable.none)
         else
             holder.contactImage.setImageBitmap(ImageUtil.getBitmapFromUri(Uri.parse(contact.avatarUri)))
-        if (contact.isOnline){          //设置是否在线
+        if (contact.isOnline) {          //设置是否在线
             holder.contactOnline.text = MyApplication.context.resources.getText(R.string.online)
             holder.contactOnline.setTextColor(MyApplication.context.resources.getColor(R.color.green))
-        }else{
+        } else {
             holder.contactOnline.text = MyApplication.context.resources.getText(R.string.offline)
             holder.contactOnline.setTextColor(MyApplication.context.resources.getColor(R.color.red))
         }
@@ -64,7 +63,7 @@ class ContactListAdapter(private val contactList: List<Contact>) :
         if (contact.isRedCircle)        //设置小红点
             holder.redCircle.background = MyApplication.context.getDrawable(R.drawable.red_circle)
         else
-            holder.redCircle.background = MyApplication.context.getDrawable(R.drawable.primary_circle)
+            holder.redCircle.background = MyApplication.context.getDrawable(R.drawable.transparent_circle)
 
     }
 

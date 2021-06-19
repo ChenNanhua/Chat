@@ -4,11 +4,29 @@
     <color name="colorPrimary">#512DA8</color>
     <color name="colorPrimaryDark">#311B92</color>
     -->
-    <color name="colorPrimary">#F0EFF4</color>
-    <color name="colorPrimaryDark">#F0EFF4</color>
+<!--    <color name="colorPrimary">#F0EFF4</color>-->
+<!--    <color name="colorPrimaryDark">#F0EFF4</color>-->
+    <color name="colorPrimary">#ECE9E6</color>
+    <color name="colorPrimaryDark">#FFFFFF</color>
     <color name="colorAccent">#00838F</color>
     <color name="red">#d11a2d</color>
     <color name="green">#83E8BA</color>
     <color name="boldTextColor">#000</color>
-    <color name="button">#4398ff</color>
+    <color name="gray">#F0EFF4</color>
+    <color name="transparent">#00FFFFFF</color>
+    <color name="button">#d7d2cc</color>
+    <!--渐变色配方-->
+    <color name="gradientStart">#F2F5DD</color>
+    <color name="gradientEnd">#F9957F</color>
+    <color name="gradientStart1">#A0F1EA</color>
+    <color name="gradientEnd1">#EAD6EE</color>
+    <color name="gradientStart2">#ffdde1</color>
+    <color name="gradientEnd2">#ee9ca7</color>
+    <color name="gradientStart3">#ffdde1</color>
+    <color name="gradientEnd3">#FFFDE4</color>
+    <color name="gradientStart4">#D3CCE3</color>
+    <color name="gradientEnd4">#E9E4F0</color>
+    <color name="gradientStart5">#ECE9E6</color>
+    <color name="gradientEnd5">#FFFFFF</color>
+
 </resources>

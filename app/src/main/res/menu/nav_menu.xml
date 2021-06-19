@@ -2,8 +2,32 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/setAvatar"
+            android:title="@string/setAvatar"
+            android:icon="@drawable/ic_avatar_24"/>
+        <item
+            android:id="@+id/searchContact"
+            android:title="@string/search_contact"
+            android:icon="@drawable/ic_search_24"/>
+        <item
             android:id="@+id/useLocal"
             android:title="@string/localOff"
-            android:icon="@mipmap/ic_done"/>
+            android:icon="@drawable/ic_switch_24"/>
+        <item
+            android:id="@+id/clear"
+            android:title="@string/clear"
+            android:icon="@drawable/ic_delete_24"/>
+        <item
+            android:id="@+id/logout"
+            android:title="@string/logout"
+            android:icon="@drawable/ic_logout_24"/>
+    </group>
+
+    <group>
+        <item
+            android:id="@+id/test"
+            android:title="@string/test"
+            android:visible="true"
+            android:icon="@drawable/ic_test_24"/>
     </group>
 </menu>

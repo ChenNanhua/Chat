@@ -123,12 +123,6 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         }
     }
 
-    //创建menu菜单
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.contact_list_menu, menu)
-        return true
-    }
-
     //menu菜单添加响应
     @SuppressLint("InflateParams")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -201,7 +195,7 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
             R.id.searchContact -> {
                 startService()
             }
-
+            //注销登录
             R.id.logout -> {
                 with(Intent(this, LoginActivity::class.java)) {
                     this.putExtra("NoAutoLogin", "NoAutoLogin")
@@ -211,6 +205,7 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
             }
 
             R.id.test -> {
+                "启动test".toast()
                 contactListToolbarImageView.setImageBitmap(ImageUtil.getBitmapFromUri(testUri))
             }
         }

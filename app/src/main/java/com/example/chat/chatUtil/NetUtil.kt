@@ -40,7 +40,7 @@ object NetUtil {
     private val gson = Gson()
     lateinit var serverSocket: ServerSocket
     private const val urlHead = "http://121.40.239.98:8080/"     //TODO 修改为真实IP地址 本地地址125.216.247.37 服务器地址121.40.239.98
-    private var isGetMessageInternet = false    //判断是否已经开启了接收服务器消息
+    var isGetMessageInternet = false    //判断是否已经开启了接收服务器消息
 
     //服务器处理线程
     class ServerThread(
@@ -510,6 +510,7 @@ object NetUtil {
                 val type = object : TypeToken<List<Contact>>() {}.type
                 val contacts: List<Contact> = gson.fromJson(result, type)   //返回的json数据转换为联系人列表
                 LogUtil.d(tag, "纯净的从服务器找到的contact${contacts}")
+                MyData.onlineContact.clear()
                 withContext(Dispatchers.IO) {
                     for (contact in contacts) {                 //将服务器有记录的主机添加到可访问主机中
                         launch {
@@ -571,6 +572,7 @@ object NetUtil {
         Thread.sleep(200)   //等待请求完成
     }
 
+    //上传头像到服务器
     fun sendAvatarInternet(uri: Uri) {
         MyApplication.scope.launch(Dispatchers.IO) {
             ImageUtil.getInputStream(uri)?.readBytes()?.let { fileData ->
@@ -632,13 +634,19 @@ object NetUtil {
         }
     }
 
-    //从服务器上下载其他人发给自己的消息
+    //从服务器上下载其他人发给自己的消息，同时自己保活
     fun getMessageInternet() {
         MyApplication.scope.launch(Dispatchers.IO) {
             if (!isGetMessageInternet) {
                 isGetMessageInternet = true
+                var startTime = System.currentTimeMillis()
                 while (true) {
                     try {
+                        if ((System.currentTimeMillis() - startTime) / 1000 > 60) {        //每60秒发送一次在线信息
+                            startTime = System.currentTimeMillis()
+                            okHttpGet("android/info?name=${MyData.username}").close()
+                        }
+                        //获取
                         val response = okHttpGet("android/getMessage?name=${MyData.username}")
                         val result = response.body?.string() ?: ""
                         LogUtil.d(tag, "从服务器接收到的消息${result}")
@@ -646,11 +654,11 @@ object NetUtil {
                             delay(1000)
                             continue
                         }
-                        //获取联系人的消息
+                        //转换消息
                         val type = object : TypeToken<HashMap<String, List<TimeMsg>>>() {}.type
                         val internetTimeMsgMap: HashMap<String, List<TimeMsg>> =
                             gson.fromJson(result, type)   //返回的json数据转换为联系人列表
-                        //插入到数据库
+                        //插入到数据库，如果是图片消息还要下载
                         internetTimeMsgMap.forEach { (key, value) ->
                             for (timeMsg: TimeMsg in value) {
                                 with(timeMsg) {
