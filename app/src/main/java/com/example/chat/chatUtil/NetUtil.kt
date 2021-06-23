@@ -12,6 +12,7 @@ import com.example.chat.MyApplication
 import com.example.chat.chatUtil.*
 import com.example.chat.chatUtil.TinyUtil.addInsert
 import com.example.chat.chatUtil.TinyUtil.addInsertAll
+import com.example.chat.chatUtil.TinyUtil.loge
 import com.example.chat.chatUtil.TinyUtil.toast
 import com.example.chat.data.Contact
 import com.example.chat.data.Msg
@@ -41,6 +42,7 @@ object NetUtil {
     lateinit var serverSocket: ServerSocket
     private const val urlHead = "http://121.40.239.98:8080/"     //TODO 修改为真实IP地址 本地地址125.216.247.37 服务器地址121.40.239.98
     var isGetMessageInternet = false    //判断是否已经开启了接收服务器消息
+    private const val localTail = "-local"
 
     //服务器处理线程
     class ServerThread(
@@ -84,7 +86,7 @@ object NetUtil {
             when (string) {
                 "yourInfo" -> {
                     //返回自身信息
-                    send.writeUTF(MyData.username)
+                    send.writeUTF(MyData.username + localTail)
                     if (get.readUTF() == "YES")       //客户端是否需要头像
                         if (MyData.myAvatarUri.toString() == "")     //自身未设置头像
                             send.writeUTF("NO")
@@ -192,8 +194,8 @@ object NetUtil {
     fun searchLocal(contactListMessenger: Messenger) {
         if (!MyApplication.useLocal)
             return
-        var myIP = getIp()       //获取本机IP
-        myIP = "172.16.0.1"      //TODO 蒲公英组网时所用，最后应删去
+        val myIP = getIp()       //获取本机IP
+        //myIP = "172.16.0.1"      //TODO 蒲公英组网时所用，最后应删去
         LogUtil.d(tag, "客户端正在搜寻,客户端IP: $myIP")
         MyApplication.scope.launch(Dispatchers.IO) {
             withContext(Dispatchers.IO) {   //阻塞
@@ -218,6 +220,7 @@ object NetUtil {
                                     val send = DataOutputStream(socket.getOutputStream())
                                     send.writeUTF("yourInfo")    //发送获取主机信息的信号
                                     val name = get.readUTF()
+                                    "局域网搜索到的用户：$name".loge()
                                     val avatarUri: Uri
                                     //有头像的联系人不用请求头像
                                     avatarUri = if (MyData.savedContact.containsKey(name)
@@ -236,7 +239,7 @@ object NetUtil {
                                     if (avatarUri.toString() == "")   //没有头像也要添加到历史联系人数据库
                                         DBUtil.setAvatarContact(name, avatarUri.toString())
                                     //发送自身信息
-                                    send.writeUTF(MyData.username)
+                                    send.writeUTF(MyData.username + localTail)
                                     if (get.readUTF() == "YES")
                                         if (MyData.myAvatarUri.toString() == "")
                                             send.writeUTF("NO")
@@ -340,7 +343,7 @@ object NetUtil {
                 socket = Socket(ip, port)
                 val send = DataOutputStream(socket.getOutputStream())
                 send.writeUTF("message")
-                send.writeUTF(MyData.username)
+                send.writeUTF(MyData.username + localTail)
                 send.writeUTF(content)
                 send.writeUTF("END")
                 MyData.getTempMsgList(contactName)
@@ -361,7 +364,7 @@ object NetUtil {
                 socket = Socket(ip, port)
                 val send = DataOutputStream(socket.getOutputStream())
                 send.writeUTF("image")
-                send.writeUTF(MyData.username)
+                send.writeUTF(MyData.username + localTail)
                 sendImageLocal(socket, imageUri)
                 send.writeUTF("END")
                 //更新到数据库中去
@@ -422,7 +425,7 @@ object NetUtil {
                     msg.what = ContactListActivity.updateRecyclerView
                     contactMessenger.send(msg)
                 } else
-                    delay(400)  //没有新消息时休眠400毫秒
+                    delay(50)  //没有新消息时休眠50毫秒
                 if (tempMsgMapName != MyData.tempMsgMapName)    //判断是否仍在对应聊天对象的聊天界面
                     break
             }
@@ -479,7 +482,7 @@ object NetUtil {
         val wm = getSystemService(MyApplication.context, WifiManager::class.java)
         //检查Wifi状态
         if (!wm!!.isWifiEnabled) {
-            "未连接WIFI，请打开WIFI".toast()
+            "要进行局域网聊天，请打开WIFI".toast()
             return "0.0.0.0"
         }
         val wi = wm.connectionInfo
@@ -575,17 +578,22 @@ object NetUtil {
     //上传头像到服务器
     fun sendAvatarInternet(uri: Uri) {
         MyApplication.scope.launch(Dispatchers.IO) {
-            ImageUtil.getInputStream(uri)?.readBytes()?.let { fileData ->
-                val urlInfo = urlHead + "android/uploadAvatar?name=${MyData.username}"
-                val fileBody = fileData.toRequestBody("image/jpeg".toMediaTypeOrNull())
-                val requestBody = MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("file", ImageUtil.getName() + ".jpg", fileBody)
-                    .build()
-                val request = Request.Builder().url(urlInfo).post(requestBody).build()
-                val response = MyApplication.client.newCall(request).execute()
-                val result = response.body?.string()
-                LogUtil.d(tag, "上传头像到服务器：${result.toString()}")
+            try {
+
+                ImageUtil.getInputStream(uri)?.readBytes()?.let { fileData ->
+                    val urlInfo = urlHead + "android/uploadAvatar?name=${MyData.username}"
+                    val fileBody = fileData.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                    val requestBody = MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart("file", ImageUtil.getName() + ".jpg", fileBody)
+                        .build()
+                    val request = Request.Builder().url(urlInfo).post(requestBody).build()
+                    val response = MyApplication.client.newCall(request).execute()
+                    val result = response.body?.string()
+                    LogUtil.d(tag, "上传头像到服务器：${result.toString()}")
+                }
+            } catch (e: Exception) {
+
             }
         }
     }

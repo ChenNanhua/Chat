@@ -88,7 +88,7 @@ object ImageUtil {
                 return BitmapFactory.decodeFileDescriptor(it?.fileDescriptor)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            //e.printStackTrace()
         }
         return null
     }

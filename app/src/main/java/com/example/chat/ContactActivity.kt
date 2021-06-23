@@ -84,7 +84,10 @@ class ContactActivity : MyActivity(), View.OnClickListener {
 
         //聊天消息界面初始化
         contactRecycleView.adapter = ContactAdapter(msgList)
-        contactRecycleView.layoutManager = LinearLayoutManager(this)
+        val linearLayoutManager = LinearLayoutManager(this)
+        //设置RecycleView随软键盘向上弹起
+        linearLayoutManager.stackFromEnd = true
+        contactRecycleView.layoutManager = linearLayoutManager
         contactRecycleView.scrollToPosition(msgList.size - 1)
 
         //后台更新聊天记录

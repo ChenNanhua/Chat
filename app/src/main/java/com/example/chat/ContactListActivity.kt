@@ -4,9 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
-import android.net.Uri
 import android.os.*
-import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
@@ -19,6 +17,7 @@ import com.example.chat.chatUtil.TinyUtil.toast
 import kotlinx.android.synthetic.main.activity_contact_list.*
 import kotlinx.android.synthetic.main.activity_contact_list.contactToolbar
 import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 
 
 class ContactListActivity : MyActivity(), View.OnClickListener {
@@ -28,7 +27,6 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
     }
 
     val adapter: ContactListAdapter = ContactListAdapter(MyData.contactList)
-    private lateinit var testUri: Uri
 
     //更新联系人列表
     private val handler = object : Handler(Looper.myLooper()!!) {
@@ -75,6 +73,7 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
         //nav的menu添加点击响应,统一放到onOptionsItemSelected
         nav.setNavigationItemSelectedListener {
             onOptionsItemSelected(it)
+            drawerLayout.closeDrawer(nav)
             false
         }
 
@@ -179,14 +178,19 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
                     setMessage("操作不可逆，三思而后行")
                     setCancelable(true)
                     setPositiveButton("是") { _, _ ->
-                        with(DBUtil.DB) {
-                            execSQL("delete from msg")
-                            execSQL("delete from contact")
-                            execSQL("delete from urlToUri")
-                            execSQL("delete from user")
-                            "清除数据完成".toast()
+                        thread {
+                            with(DBUtil.DB) {
+                                execSQL("delete from msg")
+                                execSQL("delete from contact")
+                                execSQL("delete from urlToUri")
+                                execSQL("delete from user")
+                            }
+                            runOnUiThread{
+                                "清除数据完成".toast()
+                                Thread.sleep(300)
+                                finish()
+                            }
                         }
-                        finish()
                     }
                     setNegativeButton("否") { _, _ -> }
                 }.show()
@@ -206,7 +210,6 @@ class ContactListActivity : MyActivity(), View.OnClickListener {
 
             R.id.test -> {
                 "启动test".toast()
-                contactListToolbarImageView.setImageBitmap(ImageUtil.getBitmapFromUri(testUri))
             }
         }
         return true

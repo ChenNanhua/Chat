@@ -7,6 +7,7 @@ import android.os.Messenger
 import com.example.chat.chatUtil.DBUtil
 import com.example.chat.chatUtil.NetUtil
 import com.example.chat.chatUtil.LogUtil
+import com.example.chat.chatUtil.TinyUtil.toast
 
 class MyService : Service() {
     private val tag = "MyService"
@@ -22,6 +23,7 @@ class MyService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         LogUtil.d(tag, "onStartCommand")
+        "正在搜索联系人".toast()
         val messenger = intent?.extras?.get("contactListMessenger") as Messenger
         NetUtil.startServerLocal(messenger)
         NetUtil.searchLocal(messenger)

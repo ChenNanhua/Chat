@@ -46,15 +46,15 @@ class LoginActivity : MyActivity(), View.OnClickListener {
                     rememberPassword.isChecked = true
                     val password: String = it.getString(it.getColumnIndex("passwordMd5"))
                     editPassword.setText(password)
+                    //判断是否自动登录
+                    val autoLoginName = shared.getString("autoLoginName", "")
+                    if (autoLoginName != "" && autoLoginName == username && intent.getStringExtra("NoAutoLogin") == null) {
+                        autoLogin.isChecked = true
+                        login(username)
+                        "自动登录成功...".toast()
+                    }
                 }
             }
-        }
-        //判断是否自动登录
-        val autoLoginName = shared.getString("autoLoginName", "")
-        if (autoLoginName != "" && autoLoginName == username && intent.getStringExtra("NoAutoLogin") == null) {
-            autoLogin.isChecked = true
-            login(username)
-            "自动登录成功...".toast()
         }
     }
 

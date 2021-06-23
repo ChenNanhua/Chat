@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-    <color name="colorPrimary">#512DA8</color>
-    <color name="colorPrimaryDark">#311B92</color>
-    -->
-<!--    <color name="colorPrimary">#F0EFF4</color>-->
-<!--    <color name="colorPrimaryDark">#F0EFF4</color>-->
-    <color name="colorPrimary">#ECE9E6</color>
+    <!--灰色截图后与白色对比太大，改为偏白的颜色-->
+<!--    <color name="colorPrimary">#ECE9E6</color>-->
+    <color name="colorPrimary">#f5f6fa</color>
     <color name="colorPrimaryDark">#FFFFFF</color>
     <color name="colorAccent">#00838F</color>
     <color name="red">#d11a2d</color>
@@ -14,7 +10,8 @@
     <color name="boldTextColor">#000</color>
     <color name="gray">#F0EFF4</color>
     <color name="transparent">#00FFFFFF</color>
-    <color name="button">#d7d2cc</color>
+<!--    <color name="button">#d7d2cc</color>-->
+    <color name="button">#f1f2f6</color>
     <!--渐变色配方-->
     <color name="gradientStart">#F2F5DD</color>
     <color name="gradientEnd">#F9957F</color>
@@ -26,7 +23,8 @@
     <color name="gradientEnd3">#FFFDE4</color>
     <color name="gradientStart4">#D3CCE3</color>
     <color name="gradientEnd4">#E9E4F0</color>
-    <color name="gradientStart5">#ECE9E6</color>
+<!--    <color name="gradientStart5">#ECE9E6</color>-->
+    <color name="gradientStart5">#f5f6fa</color>
     <color name="gradientEnd5">#FFFFFF</color>
 
 </resources>

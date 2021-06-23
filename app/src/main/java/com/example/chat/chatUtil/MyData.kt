@@ -29,6 +29,7 @@ object MyData {
 
     //判断聊天对象
     var tempMsgMapName = ""
+
     //判断是否需要更新redCircle
     var redCircle = false
 
@@ -38,8 +39,10 @@ object MyData {
 
     //已保存过的联系人
     val savedContact: HashMap<String, Contact> = HashMap()
+
     //保存在线的联系人
     val contactList = ArrayList<Contact>()
+
     //服务器Url对应的本地Uri
     val urlToUri: HashMap<String, String> = HashMap()
 
@@ -52,7 +55,7 @@ object MyData {
                         with(it) {
                             //姓名下标0，Uri下标1,
                             savedContact[getString(0)] =
-                                Contact(getString(0), "0.0.0.0", getString(1), false, getString(3)!!.toBoolean())
+                                Contact(getString(0), "0.0.0.0", getString(1), false, getInt(3) == 1)
                         }
                     } while (it.moveToNext())
                 }
